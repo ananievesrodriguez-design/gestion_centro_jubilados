@@ -1,0 +1,8 @@
+Ese mensaje aparece porque Git necesita saber quién es el autor de los commits antes de registrar los cambios. 
+Como aún no tiene configurado tu nombre y correo, bloqueó la operación. 
+Para solucionarlo, ejecuta estos dos comandos en tu terminal (reemplazando con tus datos reales de GitHub):
+
+
+
+git config --global user.name "Ana Nieves Rodriguez"
+git config --global user.email "ananievesrodriguez@gmail.com"

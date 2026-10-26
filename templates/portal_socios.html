@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+
+{% block title %}Portal del Socio - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background-color: #f4f6f9; }
+
+    .hero-banner {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a4ebd 100%);
+        color: #ffffff;
+        border-radius: 0 0 30px 30px;
+        padding: 50px 20px 30px 20px;
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+    }
+
+    .card-amigable {
+        border-radius: 18px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        border: none;
+        transition: transform 0.2s ease;
+    }
+    .card-amigable:hover { transform: translateY(-3px); }
+
+    .icono-grande { font-size: 2.2rem; margin-bottom: 10px; }
+
+    .cumple-card {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+        border: 2px dashed #ffc107;
+        border-radius: 16px;
+    }
+
+    .novedad-card {
+        background: #ffffff;
+        border-left: 5px solid #0d6efd;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
+    }
+    .novedad-card:hover { transform: translateX(5px); }
+
+    .edad-badge {
+        background: #e9ecef;
+        color: #495057;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.95rem;
+    }
+
+    h1, h2, h3, h4, h5 { font-weight: 700; }
+    .text-gris-oscuro { color: #495057; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- Header Institucional -->
+    <header class="hero-banner text-center position-relative">
+        <div class="container py-2">
+            {% if INSTITUCION.logo %}
+                <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}"
+                     alt="Logo" class="bg-white rounded-circle p-2 shadow-sm mb-3"
+                     style="width: 100px; height: 100px; object-fit: contain;">
+            {% endif %}
+            <h2 class="fw-bold mb-1">{{ INSTITUCION.nombre or 'Centro de Jubilados y Pensionados' }}</h2>
+            <p class="mb-0 text-light opacity-80 fs-5">
+                {{ INSTITUCION.direccion or '' }} — {{ INSTITUCION.ciudad_provincia or '' }}
+            </p>
+        </div>
+    </header>
+
+    <!-- Bienvenida Institucional -->
+    <div class="text-center mb-4">
+        <h1 class="fw-bold text-dark mb-2">👋 Bienvenido/a al Portal del Socio</h1>
+        <p class="text-muted fs-5">Consultá tus cuotas, recibos y novedades del centro de forma rápida y sencilla.</p>
+    </div>
+
+    <!-- Fila de tarjetas de acceso rápido (para adultos mayores) -->
+    <div class="row g-3 mb-4">
+        <!-- Tarjeta: Consultar mis cuotas -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-amigable bg-white h-100">
+                <div class="card-body text-center p-3">
+                    <div class="icono-grande text-primary">📋</div>
+                    <h5 class="fw-bold text-dark mb-2">Consultar mis cuotas</h5>
+                    <p class="text-muted small mb-3">Ingresá tu DNI o N° de socio para ver tu estado y pagos.</p>
+                    <button type="button" class="btn btn-primary btn-grande w-100" data-bs-toggle="collapse" data-bs-target="#seccionConsulta">
+                        🔍 Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Tarjeta: Último recibo -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-amigable bg-white h-100">
+                <div class="card-body text-center p-3">
+                    <div class="icono-grande text-success">📄</div>
+                    <h5 class="fw-bold text-dark mb-2">Ver mi último recibo</h5>
+                    <p class="text-muted small mb-3">Descargá el comprobante de tu último pago.</p>
+                    {% if ultimo_pago %}
+                        <a href="{{ url_for('imprimir_recibo', cuota_id=ultimo_pago.id) }}" target="_blank" class="btn btn-success btn-grande w-100">
+                            📥 Descargar PDF
+                        </a>
+                    {% else %}
+                        <button class="btn btn-outline-secondary btn-grande w-100" disabled>
+                            📥 Sin recibos
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Tarjeta: Novedades -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-amigable bg-white h-100">
+                <div class="card-body text-center p-3">
+                    <div class="icono-grande text-info">📢</div>
+                    <h5 class="fw-bold text-dark mb-2">Novedades del Centro</h5>
+                    <p class="text-muted small mb-3">Enterate de los avisos y comunicados recientes.</p>
+                    {% if novedades %}
+                        <a href="{{ url_for('portal_socios') }}#seccionNovedades" class="btn btn-info btn-grande w-100">
+                            Ver Novedades
+                        </a>
+                    {% else %}
+                        <button class="btn btn-outline-secondary btn-grande w-100" disabled>
+                            Sin novedades
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Tarjeta: Cumpleaños del día -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-amigable bg-white h-100">
+                <div class="card-body text-center p-3">
+                    <div class="icono-grande text-warning">🎂</div>
+                    <h5 class="fw-bold text-dark mb-2">Cumpleaños de Hoy</h5>
+                    <p class="text-muted small mb-3">{{ cumple_hoy|length }} socio{% if cumple_hoy|length != 1 %}s{% endif %} celebran hoy.</p>
+                    {% if cumple_hoy %}
+                        <a href="{{ url_for('portal_socios') }}#seccionCumpleHoy" class="btn btn-warning btn-grande w-100 text-dark">
+                            Ver Listado
+                        </a>
+                    {% else %}
+                        <button class="btn btn-outline-secondary btn-grande w-100" disabled>
+                            Sin cumpleaños
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN: Consulta de Cuotas -->
+    <div id="seccionConsulta" class="collapse mt-4">
+        <div class="card card-amigable border-0 bg-white p-4 mb-4">
+            <div class="text-center mb-3">
+                <h4 class="fw-bold text-dark mb-1">Consulta de Estado y Cuotas</h4>
+                <p class="text-secondary small mb-0">Ingresá tu número de documento o N° de socio para consultar tu estado</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('portal_socios') }}" class="mt-2">
+                <div class="input-group">
+                    <input type="text" name="criterio" class="form-control input-grande text-center fw-bold"
+                           placeholder="Ingrese su DNI o N° de Socio" value="{{ termino }}" required autofocus>
+                    <button class="btn btn-primary btn-grande fw-bold px-4" type="submit">
+                        🔍 Consultar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Resultados de la búsqueda -->
+        {% if busqueda_realizada %}
+            {% if socio %}
+
+                <!-- ALERTA DE CUMPLEAÑOS DEL SOCIO BUSCADO -->
+                {% if es_cumpleanos_hoy %}
+                <div class="cumple-card p-4 mb-4 text-center shadow-sm">
+                    <i class="fas fa-birthday-cake icono-grande text-warning"></i>
+                    <h4 class="fw-bold text-dark mb-1">🎂 ¡Muy Feliz Cumpleaños, {{ socio.nombre }}! 🎉</h4>
+                    <p class="mb-0 text-dark">
+                        Toda la Comisión Directiva y la comunidad del Centro le deseamos que pase un día maravilloso rodeado/a de mucho cariño.
+                    </p>
+                </div>
+                {% elif es_mes_cumpleanos %}
+                <div class="alert alert-info border-0 rounded-3 shadow-sm d-flex align-items-center gap-3 mb-4">
+                    <i class="fas fa-gift icono-grande text-info"></i>
+                    <div>
+                        <strong class="d-block">¡Mes de su Cumpleaños!</strong>
+                        <span>Le enviamos un cordial saludo en este mes especial de parte de toda la institución.</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Tarjeta del Afiliado -->
+                <div class="card card-amigable shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 border-bottom pb-3 mb-3">
+                            <div>
+                                <span class="badge bg-primary fs-6 px-3 py-1">Socio N° {{ socio.nro_socio or socio.id }}</span>
+                                <h3 class="fw-bold text-dark mt-2 mb-0">{{ socio.apellido }}, {{ socio.nombre }}</h3>
+                                <small class="text-muted">DNI: {{ socio.dni }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="text-muted small d-block">Condición:</span>
+                                {% if (socio.estado or '')|lower == 'activo' %}
+                                    <span class="badge bg-success fs-6 px-3 py-2">🟢 Afiliado Activo</span>
+                                {% elif (socio.estado or '')|lower == 'vitalicio' %}
+                                    <span class="badge bg-info text-dark fs-6 px-3 py-2">⭐ Socio Vitalicio</span>
+                                {% else %}
+                                    <span class="badge bg-secondary fs-6 px-3 py-2">{{ socio.estado }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Resumen del Último Pago -->
+                        <div class="alert alert-light border rounded-3 p-3 mb-3">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <span class="text-muted small d-block">Último Pago Asentado:</span>
+                                    {% if ultimo_pago %}
+                                        <strong class="fs-5 text-dark">{{ ultimo_pago.periodo or ('Año ' ~ ultimo_pago.anio) }}</strong>
+                                        <span class="text-secondary small ms-2">
+                                            (Abonado el {{ ultimo_pago.fecha_cobro.strftime('%d/%m/%Y') if ultimo_pago.fecha_cobro and ultimo_pago.fecha_cobro.strftime else ultimo_pago.fecha_cobro }})
+                                        </span>
+                                    {% else %}
+                                        <span class="text-warning fw-semibold">No registra pagos recientes en el sistema.</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                                    {% if ultimo_pago %}
+                                        <a href="{{ url_for('imprimir_recibo', cuota_id=ultimo_pago.id) }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold">
+                                            📄 Ver Recibo
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Historial de Cuotas -->
+                        {% if cuotas %}
+                            <h6 class="fw-bold text-secondary mb-2 mt-4">Últimos Recibos Disponibles</h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr class="small text-secondary">
+                                            <th>Fecha</th>
+                                            <th>Período</th>
+                                            <th>Comprobante</th>
+                                            <th class="text-end">Monto</th>
+                                            <th class="text-center">Descargar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for c in cuotas %}
+                                        <tr>
+                                            <td>{{ c.fecha_cobro.strftime('%d/%m/%Y') if c.fecha_cobro and c.fecha_cobro.strftime else (c.fecha_cobro or '-') }}</td>
+                                            <td><span class="badge bg-light text-dark border">{{ c.periodo or ('Año ' ~ c.anio) }}</span></td>
+                                            <td class="text-muted small">{{ c.comprobante or '-' }}</td>
+                                            <td class="text-end fw-bold text-success">${{ "{:,.2f}".format(c.monto or 0) }}</td>
+                                            <td class="text-center">
+                                                <a href="{{ url_for('imprimir_recibo', cuota_id=c.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-2">
+                                                    📥 PDF
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="alert alert-warning text-center rounded-4 p-4 shadow-sm">
+                    <h5 class="fw-bold">No se encontró el afiliado</h5>
+                    <p class="mb-0">No se encontraron registros con el documento <strong>"{{ termino }}"</strong>.</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- SECCIÓN: NOVEDADES DEL CENTRO -->
+    <div id="seccionNovedades" class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold text-dark mb-0">📢 Novedades y Comunicados</h3>
+            {% if novedades %}
+                <span class="badge bg-primary fs-6">{{ novedades|length }} novedad{% if novedades|length != 1 %}es{% endif %}</span>
+            {% endif %}
+        </div>
+
+        {% if novedades %}
+            <div class="row g-3 mb-4">
+                {% for n in novedades %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card novedad-card h-100 p-3">
+                        {% if n.imagen %}
+                            <img src="{{ url_for('static', filename='img/novedades/' + n.imagen) }}" class="img-fluid-novedad mb-3" alt="{{ n.titulo }}">
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center rounded-3 mb-3" style="height: 160px; border: 1px dashed #ddd;">
+                                <span class="text-muted small">Sin imagen</span>
+                            </div>
+                        {% endif %}
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary fs-6">{{ n.fecha_publicacion.strftime('%d/%m/%Y') if n.fecha_publicacion else '-' }}</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-2">{{ n.titulo }}</h5>
+                        <p class="text-muted small mb-3">{{ n.contenido or 'Sin descripción.' }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card card-amigable bg-white text-center p-4">
+                <i class="fas fa-bullhorn icono-grande text-muted"></i>
+                <h5 class="fw-bold text-dark mt-3 mb-2">No hay novedades registradas</h5>
+                <p class="text-muted">Pronto publicaremos avisos y comunicados del centro.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- SECCIÓN: CUMPLEAÑOS DEL DÍA -->
+    <div id="seccionCumpleHoy" class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold text-dark mb-0">🎂 Cumpleaños de Hoy ({{ hoy.strftime('%d/%m') }})</h3>
+            <span class="badge bg-success fs-6">{{ cumple_hoy|length }} socio{% if cumple_hoy|length != 1 %}s{% endif %}</span>
+        </div>
+
+        {% if cumple_hoy %}
+            <div class="row g-3 mb-4">
+                {% for c in cumple_hoy %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card card-amigable cumple-card p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary me-2">#{{ c.nro_socio or c.id }}</span>
+                            {% if c.edad %}
+                                <span class="edad-badge">{{ c.edad }} años</span>
+                            {% endif %}
+                        </div>
+                        <strong class="fs-5 d-block text-dark">{{ c.apellido }}, {{ c.nombre }}</strong>
+                        <div class="text-muted small mt-2">
+                            <i class="fas fa-phone me-1"></i> {{ c.telefono or 'Sin teléfono registrado' }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card card-amigable bg-white text-center p-4">
+                <i class="fas fa-cake-candles icono-grande text-muted"></i>
+                <h5 class="fw-bold text-dark mt-3 mb-2">Hoy no hay cumpleaños</h5>
+                <p class="text-muted">Ningún socio cumple años hoy. ¡Volvé mañana para ver quiénes celebran!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- SECCIÓN: CUMPLEAÑOS DEL MES -->
+    <div class="mt-5">
+        <h3 class="fw-bold text-dark mb-3">📅 Cumpleaños de este Mes ({{ hoy.strftime('%B') | capitalize }})</h3>
+
+        {% if cumple_mes %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr class="small text-secondary">
+                            <th class="text-center" style="width: 80px;">Día</th>
+                            <th>Socio</th>
+                            <th class="text-center" style="width: 100px;">Edad</th>
+                            <th>Teléfono</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in cumple_mes %}
+                        <tr>
+                            <td class="text-center fw-bold text-primary fs-6">
+                                {{ "%02d"|format(m.dia_cumple) }}
+                            </td>
+                            <td>
+                                <span class="text-muted small">#{{ m.nro_socio or m.id }}</span><br>
+                                <strong class="d-block">{{ m.apellido }}, {{ m.nombre }}</strong>
+                            </td>
+                            <td class="text-center">
+                                {% if m.edad %}
+                                    <span class="edad-badge">{{ m.edad }} años</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ m.telefono or 'Sin teléfono' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card card-amigable bg-white text-center p-4">
+                <i class="fas fa-calendar icono-grande text-muted"></i>
+                <h5 class="fw-bold text-dark mt-3 mb-2">No hay cumpleaños este mes</h5>
+                <p class="text-muted">No se registran socios con cumpleaños en este mes.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- SECCIÓN: DOCUMENTOS OFICIALES -->
+    <div id="seccionDocumentos" class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-dark mb-0">📄 Documentos Oficiales</h3>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <!-- Estatuto -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-amigable h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="icono-grande text-primary">📜</div>
+                        <h5 class="fw-bold text-dark mb-2">Estatuto del Centro</h5>
+                        <p class="text-muted small mb-3">Descargá el estatuto institucional vigente.</p>
+                        {% if estatuto %}
+                            <a href="{{ url_for('descargar_archivo_portal', id=estatuto[0].id) }}" class="btn btn-primary btn-grande w-100">
+                                📄 Descargar PDF
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary btn-grande w-100" disabled>
+                                📄 Próximamente
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- Memoria y Balance -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-amigable h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="icono-grande text-success">📊</div>
+                        <h5 class="fw-bold text-dark mb-2">Memoria y Balance</h5>
+                        <p class="text-muted small mb-3">Memoria anual y balance del ejercicio cerrado.</p>
+                        {% if memoria_balance %}
+                            <a href="{{ url_for('descargar_archivo_portal', id=memoria_balance[0].id) }}" class="btn btn-success btn-grande w-100">
+                                📄 Descargar PDF
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary btn-grande w-100" disabled>
+                                📄 Próximamente
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- Fotos -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-amigable h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="icono-grande text-info">🖼️</div>
+                        <h5 class="fw-bold text-dark mb-2">Galería de Fotos</h5>
+                        <p class="text-muted small mb-3">Fotos de eventos y actividades del centro.</p>
+                        {% if fotos_portal %}
+                            <a href="{{ url_for('portal_socios') }}#seccionFotos" class="btn btn-info btn-grande w-100">
+                                Ver Galería
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary btn-grande w-100" disabled>
+                                🖼️ Sin fotos
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN: GALERÍA DE FOTOS -->
+    <div id="seccionFotos" class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold text-dark mb-0">🖼️ Galería de Fotos</h3>
+            {% if fotos_portal %}
+                <span class="badge bg-info fs-6">{{ fotos_portal|length }} foto{% if fotos_portal|length != 1 %}s{% endif %}</span>
+            {% endif %}
+        </div>
+
+        {% if fotos_portal %}
+            <div class="row g-3">
+                {% for f in fotos_portal %}
+                <div class="col-md-6 col-lg-4 col-xl-3">
+                    <div class="card card-amigable h-100 p-2">
+                        {% if f.archivo %}
+                            <a href="{{ url_for('descargar_archivo_portal', id=f.id) }}" class="d-block">
+                                <img src="{{ url_for('static', filename='fotos_portal/' + f.archivo) }}" class="img-fluid rounded-3" alt="{{ f.titulo }}" style="width: 100%; height: 200px; object-fit: cover;">
+                            </a>
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center rounded-3" style="height: 200px; border: 1px dashed #ddd;">
+                                <span class="text-muted small">Sin imagen</span>
+                            </div>
+                        {% endif %}
+                        <div class="p-3">
+                            <h6 class="fw-bold text-dark mb-1">{{ f.titulo }}</h6>
+                            <p class="text-muted small mb-2">{{ f.descripcion or '' }}</p>
+                            <a href="{{ url_for('descargar_archivo_portal', id=f.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                                📥 Descargar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card card-amigable bg-white text-center p-4">
+                <i class="fas fa-image icono-grande text-muted"></i>
+                <h5 class="fw-bold text-dark mt-3 mb-2">No hay fotos registradas</h5>
+                <p class="text-muted">Pronto publicaremos imágenes de las actividades del centro.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Avisos Generales / Comisión Directiva -->
+    <div class="card card-amigable border-0 shadow-sm mt-5">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold text-primary mb-0">👥 Comisión Directiva</h5>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalComision">
+                Ver Autoridades
+            </button>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-start gap-3 p-3 bg-light rounded-3">
+                        <span class="fs-3">⏰</span>
+                        <div>
+                            <strong class="d-block text-dark">Horario de Atención</strong>
+                            <span class="text-muted">Lunes a Viernes en la sede social para cobro de cuotas y trámites.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-start gap-3 p-3 bg-light rounded-3">
+                        <span class="fs-3">📍</span>
+                        <div>
+                            <strong class="d-block text-dark">Sede Social</strong>
+                            <span class="text-muted">{{ INSTITUCION.direccion or 'Consultá en secretaría' }} — {{ INSTITUCION.ciudad_provincia or '' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: COMISIÓN DIRECTIVA -->
+    <div class="modal fade" id="modalComision" tabindex="-1" aria-labelledby="modalComisionLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="modalComisionLabel">👥 Comisión Directiva</h5>
+                        <small class="text-white-50">Período de Mandato: 2026 - 2028</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr class="small text-uppercase text-secondary">
+                                    <th class="ps-3">Cargo</th>
+                                    <th>Nombre y Apellido</th>
+                                    <th>Localidad</th>
+                                    <th>Contacto</th>
+                                    <th class="text-center">Período</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if comision %}
+                                    {% for integrante in comision %}
+                                    <tr>
+                                        <td class="ps-3 fw-bold text-primary">{{ integrante.cargo }}</td>
+                                        <td class="fw-semibold">{{ integrante.nombre }}</td>
+                                        <td>{{ integrante.domicilio }}</td>
+                                        <td>
+                                            {% if integrante.telefono %}
+                                                <a href="tel:{{ integrante.telefono }}" class="text-decoration-none text-dark">
+                                                    📞 {{ integrante.telefono }}
+                                                </a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center small text-muted">
+                                            {{ integrante.inicio }} al {{ integrante.fin }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">No hay datos registrados de la comisión directiva.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
+</body>
+</html>

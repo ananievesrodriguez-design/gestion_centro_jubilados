@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Modificar Movimiento - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+    <div class="container py-4" style="max-width: 680px;">
+        <div class="card card-amigable shadow-sm border-0">
+            <div class="card-header bg-warning text-dark py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold">Modificar Movimiento de Caja</h4>
+                <span class="badge bg-dark text-white">ID #{{ m.id }}</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="row">
+                        <!-- Tipo -->
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label fw-bold">Tipo de Operación (*)</label>
+                            <select class="form-select border-primary" id="tipo" name="tipo" required>
+                                <option value="Egreso" {% if m.tipo | lower == 'egreso' %}selected{% endif %}>Egreso (Gasto / Salida)</option>
+                                <option value="Ingreso" {% if m.tipo | lower == 'ingreso' %}selected{% endif %}>Ingreso (Entrada directa)</option>
+                            </select>
+                        </div>
+
+                        <!-- Fecha -->
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha" class="form-label fw-bold">Fecha (*)</label>
+                            <input type="date" class="form-control" id="fecha" name="fecha" value="{{ m.fecha.strftime('%Y-%m-%d') if m.fecha else '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Categoría -->
+                        <div class="col-md-6 mb-3">
+                            <label for="categoria" class="form-label fw-bold">Categoría (*)</label>
+                            <select class="form-select" id="categoria" name="categoria" required>
+                                {% set cats = ["Servicios", "Mantenimiento / Refacciones", "Artículos de Limpieza / Oficina", "Eventos / Agasajos", "Subsidio / Donación", "Varios"] %}
+                                {% for c in cats %}
+                                    <option value="{{ c }}" {% if m.categoria == c %}selected{% endif %}>{{ c }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Monto -->
+                        <div class="col-md-6 mb-3">
+                            <label for="monto" class="form-label fw-bold">Monto ($) (*)</label>
+                            <input type="number" step="0.01" class="form-control fw-bold" id="monto" name="monto" value="{{ m.monto }}" required>
+                        </div>
+                    </div>
+
+                    <!-- Concepto -->
+                    <div class="mb-3">
+                        <label for="concepto" class="form-label fw-bold">Concepto / Detalle (*)</label>
+                        <input type="text" class="form-control" id="concepto" name="concepto" value="{{ m.concepto }}" required>
+                    </div>
+
+                    <div class="row">
+                        <!-- Comprobante -->
+                        <div class="col-md-6 mb-3">
+                            <label for="comprobante" class="form-label fw-bold">N° Comprobante / Factura</label>
+                            <input type="text" class="form-control" id="comprobante" name="comprobante" value="{{ m.comprobante or '' }}">
+                        </div>
+
+                        <!-- Interviene -->
+                        <div class="col-md-6 mb-3">
+                            <label for="interviene" class="form-label fw-bold">Interviene (Responsable)</label>
+                            <input type="text" class="form-control" id="interviene" name="interviene" value="{{ m.interviene or '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Método -->
+                    <div class="mb-3">
+                        <label for="metodo" class="form-label fw-bold">Método de Pago</label>
+                        <select class="form-select" id="metodo" name="metodo">
+                            <option value="Efectivo" {% if m.metodo == 'Efectivo' %}selected{% endif %}>Efectivo</option>
+                            <option value="Transferencia" {% if m.metodo == 'Transferencia' %}selected{% endif %}>Transferencia Bancaria</option>
+                        </select>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label fw-bold">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="2">{{ m.observaciones or '' }}</textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning fw-bold flex-grow-1 py-2">Guardar Modificaciones</button>
+                        <a href="{{ url_for('listar_caja') }}" class="btn btn-secondary py-2 px-4">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

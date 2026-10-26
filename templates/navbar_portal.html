@@ -1,0 +1,71 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4 no-print">
+    <div class="container-fluid px-4">
+        <!-- Logo e Institución -->
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white text-decoration-none" href="{{ url_for('portal_socios') }}">
+            {% if INSTITUCION.logo %}
+                <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}"
+                     alt="Logo"
+                     style="height: 40px; width: auto; max-width: 50px; object-fit: contain;"
+                     class="bg-white rounded p-1 shadow-sm">
+            {% else %}
+                <span class="fs-4">🏛️</span>
+            {% endif %}
+            <span>{{ INSTITUCION.nombre or 'Centro de Jubilados' }}</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenuPortal"
+                aria-controls="navMenuPortal" aria-expanded="false" aria-label="Navegación">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navMenuPortal">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
+                <!-- Solo Portal del Socio -->
+                <li class="nav-item">
+                    <a class="nav-link fw-bold text-white" href="{{ url_for('portal_socios') }}">
+                        👤 Portal del Socio
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Botón de Administración (solo visible si NO está logueado como admin) -->
+            {% if not session.get('admin_logueado') %}
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#modalLoginAdmin">
+                    🔐 Administración
+                </button>
+            </div>
+            {% else %}
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-light btn-sm">
+                    🚪 Salir Administración
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- MODAL: LOGIN DE ADMINISTRACIÓN -->
+<div class="modal fade" id="modalLoginAdmin" tabindex="-1" aria-labelledby="modalLoginAdminLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="modalLoginAdminLabel">🔐 Acceso de Administración</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('admin_login') }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Clave de Administración</label>
+                        <input type="password" name="clave" class="form-control" placeholder="Ingrese la clave" required autofocus>
+                        <div class="form-text">Solicite la clave a la Comisión Directiva.</div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary fw-bold">Ingresar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

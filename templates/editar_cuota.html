@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Cuota #{{ cuota.id }} - {{ cuota.apellido }}, {{ cuota.nombre }}{% endblock %}
+
+{% block content %}
+    <div class="container py-4" style="max-width: 760px;">
+        <div class="card card-amigable shadow-sm border-0">
+            <div class="card-header bg-warning text-dark py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">✏️ Editar Cuota #{{ cuota.id }}</h4>
+                <span class="badge bg-light text-warning fs-6">{{ cuota.apellido }}, {{ cuota.nombre }}</span>
+            </div>
+            <div class="card-body p-4">
+
+                <!-- Mensajes flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" id="formEditarCuota">
+                    <input type="hidden" name="cuota_id" value="{{ cuota.id }}">
+
+                    <div class="alert alert-info">
+                        <strong>Socio:</strong> {{ cuota.apellido }}, {{ cuota.nombre }} (N° {{ cuota.nro_socio or cuota.socio_id }})<br>
+                        <strong>Fecha actual:</strong> {{ cuota.fecha_cobro.strftime('%d/%m/%Y') if cuota.fecha_cobro else '-' }} |
+                        <strong>Tipo actual:</strong> {{ cuota.tipo_concepto or 'cuota_mensual' }}
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- N° de Recibo -->
+                        <div class="col-md-6 mb-3">
+                            <label for="nro_recibo" class="form-label fw-bold">N° Recibo / Comprobante (*)</label>
+                            <input type="text" class="form-control" id="nro_recibo" name="nro_recibo" 
+                                   value="{{ cuota.nro_recibo or '' }}" required>
+                        </div>
+
+                        <!-- Fecha de Cobro -->
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_cobro" class="form-label fw-bold">Fecha de Cobro (*)</label>
+                            <input type="date" class="form-control" id="fecha_cobro" name="fecha_cobro" 
+                                   value="{{ cuota.fecha_cobro.strftime('%Y-%m-%d') if cuota.fecha_cobro else '' }}" required>
+                        </div>
+
+                        <!-- Período -->
+                        <div class="col-md-6 mb-3">
+                            <label for="periodo" class="form-label fw-bold">Período (*)</label>
+                            <input type="text" class="form-control" id="periodo" name="periodo" 
+                                   value="{{ cuota.periodo or '' }}" required>
+                            <div class="form-text">Ej: 0/2026 para inscripción, ene-26, jul-26, anual, etc.</div>
+                        </div>
+
+                        <!-- Tipo de Concepto -->
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_concepto" class="form-label fw-bold">Tipo de Concepto (*)</label>
+                            <select class="form-select border-primary" id="tipo_concepto" name="tipo_concepto" required>
+                                <option value="cuota_mensual" {% if (cuota.tipo_concepto or '') == 'cuota_mensual' %}selected{% endif %}>Cuota Mensual</option>
+                                <option value="cuota_anual" {% if (cuota.tipo_concepto or '') == 'cuota_anual' %}selected{% endif %}>Cuota Anual</option>
+                                <option value="inscripcion" {% if (cuota.tipo_concepto or '') == 'inscripcion' %}selected{% endif %}>Inscripción al Centro</option>
+                                <option value="otro" {% if (cuota.tipo_concepto or '') == 'otro' %}selected{% endif %}>Otro</option>
+                            </select>
+                        </div>
+
+                        <!-- Monto -->
+                        <div class="col-md-6 mb-3">
+                            <label for="monto" class="form-label fw-bold">Monto ($) (*)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control fw-bold fs-5 text-success" id="monto" name="monto" 
+                                       value="{{ cuota.monto or 0 }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Método de Pago -->
+                        <div class="col-md-6 mb-3">
+                            <label for="metodo_pago" class="form-label fw-bold">Método de Pago</label>
+                            <select class="form-select" id="metodo_pago" name="metodo_pago">
+                                <option value="Efectivo" {% if (cuota.metodo_pago or '') == 'Efectivo' %}selected{% endif %}>Efectivo</option>
+                                <option value="Transferencia" {% if (cuota.metodo_pago or '') == 'Transferencia' %}selected{% endif %}>Transferencia Bancaria</option>
+                            </select>
+                        </div>
+
+                        <!-- Cobrador -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cobrador_id" class="form-label fw-bold">Cobrador / Responsable</label>
+                            <select class="form-select" id="cobrador_id" name="cobrador_id">
+                                <option value="" {% if not cuota.cobrador_id %}selected{% endif %}>Seleccionar cobrador...</option>
+                                {% for cob in cobradores %}
+                                <option value="{{ cob.id }}" {% if cuota.cobrador_id == cob.id %}selected{% endif %}>
+                                    {{ cob.nombre }} {{ cob.apellido or '' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="col-md-6 mb-3">
+                            <label for="estado" class="form-label fw-bold">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="PAGADO" {% if (cuota.estado or '') == 'PAGADO' %}selected{% endif %}>PAGADO</option>
+                                <option value="PENDIENTE" {% if (cuota.estado or '') == 'PENDIENTE' %}selected{% endif %}>PENDIENTE</option>
+                                <option value="ANULADO" {% if (cuota.estado or '') == 'ANULADO' %}selected{% endif %}>ANULADO</option>
+                            </select>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="col-12 mb-3">
+                            <label for="observaciones" class="form-label fw-bold">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="2">{{ cuota.observaciones or '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-warning fw-bold px-4">💾 Guardar Cambios</button>
+                        <a href="{{ url_for('ficha_socio', id=cuota.socio_id) }}" class="btn btn-secondary px-4">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

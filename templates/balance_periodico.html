@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Balance Periódico de Caja - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-metric {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    @media print {
+        .no-print { display: none !important; }
+        body { background: #fff !important; }
+        .card { border: none !important; box-shadow: none !important; }
+        .container-fluid { padding: 0 !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid px-4 py-4">
+
+        <!-- Encabezado y Barra de Filtros -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h3 class="fw-bold text-dark mb-0">Balance Periódico de Tesorería</h3>
+                <p class="text-secondary small mb-0">Rendición contable y distribución de ingresos/egresos</p>
+            </div>
+            <div class="d-flex align-items-center gap-2 no-print">
+                <a href="{{ url_for('exportar_balance_excel', fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}" class="btn btn-outline-success btn-sm fw-bold shadow-sm">
+                    📊 Descargar Excel (.xlsx)
+                </a>
+                <button onclick="window.print()" class="btn btn-outline-secondary btn-sm fw-semibold">
+                    🖨️ Imprimir Balance
+                </button>
+            </div>
+        </div>
+
+        <!-- Formulario de Rango de Fechas -->
+        <div class="card card-metric p-3 mb-4 no-print bg-white">
+            <form method="GET" action="{{ url_for('balance_periodico') }}" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Fecha Desde:</label>
+                    <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ fecha_desde }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Fecha Hasta:</label>
+                    <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ fecha_hasta }}" required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary btn-sm fw-bold w-100">
+                        🔍 Filtrar Período
+                    </button>
+                </div>
+                <div class="col-md-3 text-md-end">
+                    <span class="text-muted small">Mostrando: <strong>{{ fecha_desde }}</strong> al <strong>{{ fecha_hasta }}</strong></span>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tarjetas de Métricas -->
+        <div class="row g-3 mb-4">
+            <!-- Tarjeta: Cuotas Cobradas -->
+            <div class="col-md-3">
+                <div class="card card-metric bg-white border-start border-info border-4 p-3 h-100">
+                    <span class="text-muted small fw-bold text-uppercase d-block">Cuotas Cobradas</span>
+                    <h3 class="fw-bold text-info mb-0">{{ cantidad_cuotas }}</h3>
+                    <small class="text-secondary">${{ "{:,.2f}".format(total_cuotas_monto) }} recaudados</small>
+                </div>
+            </div>
+
+            <!-- Tarjeta: Total Ingresos -->
+            <div class="col-md-3">
+                <div class="card card-metric bg-white border-start border-success border-4 p-3 h-100">
+                    <span class="text-muted small fw-bold text-uppercase d-block">Total Ingresos</span>
+                    <h3 class="fw-bold text-success mb-0">${{ "{:,.2f}".format(total_ingresos) }}</h3>
+                    <small class="text-secondary">Incluye cuotas y otros ingresos</small>
+                </div>
+            </div>
+
+            <!-- Tarjeta: Total Egresos -->
+            <div class="col-md-3">
+                <div class="card card-metric bg-white border-start border-danger border-4 p-3 h-100">
+                    <span class="text-muted small fw-bold text-uppercase d-block">Total Egresos</span>
+                    <h3 class="fw-bold text-danger mb-0">${{ "{:,.2f}".format(total_egresos) }}</h3>
+                    <small class="text-secondary">Gastos operativos del período</small>
+                </div>
+            </div>
+
+            <!-- Tarjeta: Saldo Neto -->
+            <div class="col-md-3">
+                <div class="card card-metric bg-white border-start border-{{ 'primary' if saldo_periodo >= 0 else 'warning' }} border-4 p-3 h-100">
+                    <span class="text-muted small fw-bold text-uppercase d-block">Saldo Neto</span>
+                    <h3 class="fw-bold text-{{ 'primary' if saldo_periodo >= 0 else 'danger' }} mb-0">
+                        ${{ "{:,.2f}".format(saldo_periodo) }}
+                    </h3>
+                    <small class="text-secondary">{{ 'Superávit contable' if saldo_periodo >= 0 else 'Déficit operativo' }}</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen Consolidado por Categoría (2 Columnas) -->
+        <div class="row g-4 mb-4">
+            <!-- Ingresos por Categoría -->
+            <div class="col-md-6">
+                <div class="card card-metric bg-white h-100">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="fw-bold text-success mb-0">🟢 Detalle de Ingresos por Concepto</h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr class="small text-secondary">
+                                    <th class="ps-3">Concepto</th>
+                                    <th class="text-center">Operaciones</th>
+                                    <th class="text-end pe-3">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ing in ingresos_cat %}
+                                <tr>
+                                    <td class="ps-3 fw-semibold">{{ ing.concepto }}</td>
+                                    <td class="text-center">{{ ing.cantidad }}</td>
+                                    <td class="text-end pe-3 fw-bold text-success">${{ "{:,.2f}".format(ing.total or 0) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center text-muted py-3">No hay ingresos registrados en el período</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Egresos por Categoría -->
+            <div class="col-md-6">
+                <div class="card card-metric bg-white h-100">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="fw-bold text-danger mb-0">🔴 Detalle de Egresos por Concepto</h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr class="small text-secondary">
+                                    <th class="ps-3">Concepto</th>
+                                    <th class="text-center">Operaciones</th>
+                                    <th class="text-end pe-3">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for egr in egresos_cat %}
+                                <tr>
+                                    <td class="ps-3 fw-semibold">{{ egr.concepto }}</td>
+                                    <td class="text-center">{{ egr.cantidad }}</td>
+                                    <td class="text-end pe-3 fw-bold text-danger">${{ "{:,.2f}".format(egr.total or 0) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center text-muted py-3">No hay egresos registrados en el período</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Libro Diario Cronológico del Período -->
+        <!-- Recaudación de Cuotas Detallada por Socio -->
+        <div class="card card-metric bg-white mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">👥 Detalle de Cuotas Cobradas por Socio</h6>
+                    <small class="text-muted">Totalización de pagos individuales registrados en el período</small>
+                </div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    {{ socios_cobros|length }} socios aportantes
+                </span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-secondary">
+                            <th class="ps-3" style="width: 80px;">Socio</th>
+                            <th>Apellido y Nombre</th>
+                            <th style="width: 110px;">DNI</th>
+                            <th class="text-center" style="width: 100px;">Cant. Cuotas</th>
+                            <th>Períodos / Concepto Abonado</th>
+                            <th style="width: 120px;" class="text-center">Última Fecha</th>
+                            <th class="text-end pe-3" style="width: 130px;">Total Aportado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sc in socios_cobros %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-primary">#{{ sc.nro_socio }}</td>
+                            <td class="fw-semibold">
+                                <a href="{{ url_for('ficha_socio', id=sc.socio_id) }}" class="text-decoration-none text-dark">
+                                    {{ sc.apellido }}, {{ sc.nombre }}
+                                </a>
+                            </td>
+                            <td>{{ sc.dni or '-' }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-info-subtle text-info-emphasis border">
+                                    {{ sc.cantidad_cuotas }}
+                                </span>
+                            </td>
+                            <td class="small text-secondary">{{ sc.periodos_pagados or 'Cuota Social' }}</td>
+                            <td class="text-center small text-muted">
+                                {{ sc.ultima_fecha_pago.strftime('%d/%m/%Y') if sc.ultima_fecha_pago and sc.ultima_fecha_pago.strftime else sc.ultima_fecha_pago }}
+                            </td>
+                            <td class="text-end pe-3 fw-bold text-success">
+                                ${{ "{:,.2f}".format(sc.total_pagado or 0) }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-3">
+                                No se registraron cobros de cuotas a socios en el período seleccionado.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% if socios_cobros %}
+                    <tfoot class="table-group-divider">
+                        <tr class="fw-bold bg-light">
+                            <td colspan="3" class="ps-3 text-end">TOTAL RECAUDADO EN CUOTAS:</td>
+                            <td class="text-center">{{ cantidad_cuotas }}</td>
+                            <td colspan="2"></td>
+                            <td class="text-end pe-3 text-success">${{ "{:,.2f}".format(total_cuotas_monto) }}</td>
+                        </tr>
+                    </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div class="card card-metric bg-white">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold text-dark mb-0">📋 Libro Diario de Movimientos</h6>
+                <span class="badge bg-light text-dark border">{{ movimientos|length }} registros</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-secondary">
+                            <th class="ps-3" style="width: 100px;">Fecha</th>
+                            <th style="width: 90px;" class="text-center">Tipo</th>
+                            <th>Concepto</th>
+                            <th style="width: 130px;">Comprobante</th>
+                            <th style="width: 120px;" class="text-end">Ingreso</th>
+                            <th style="width: 120px;" class="text-end pe-3">Egreso</th>
+                            <th>Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in movimientos %}
+                        <tr>
+                            <td class="ps-3 text-muted small">
+                                {{ m.fecha.strftime('%d/%m/%Y') if m.fecha and m.fecha.strftime else m.fecha }}
+                            </td>
+                            <td class="text-center">
+                                {% if m.tipo == 'Ingreso' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Ingreso</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Egreso</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-semibold">{{ m.concepto }}</td>
+                            <td class="text-muted small">{{ m.comprobante or '-' }}</td>
+                            <td class="text-end fw-bold text-success">
+                                {{ "${:,.2f}".format(m.monto) if m.tipo == 'Ingreso' else '-' }}
+                            </td>
+                            <td class="text-end pe-3 fw-bold text-danger">
+                                {{ "${:,.2f}".format(m.monto) if m.tipo == 'Egreso' else '-' }}
+                            </td>
+                            <td class="text-secondary small">{{ m.observaciones or '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">No se registran movimientos en el rango seleccionado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}

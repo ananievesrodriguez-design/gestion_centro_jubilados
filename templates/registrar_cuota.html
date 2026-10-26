@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Cobro de Cuota - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+    <div class="container py-4" style="max-width: 760px;">
+        <div class="card card-amigable shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Registrar Cobro</h4>
+                <span class="badge bg-light text-primary fs-6">Gestión de Cuotas</span>
+            </div>
+            <div class="card-body p-4">
+
+                <!-- Mensajes flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" id="formCobroCuota"
+                      data-valor-mensual="{{ CONFIG.reglas_negocio.valor_cuota_mensual or CONFIG.reglas_negocio.valor_cuota_estandar or 200 }}"
+                      data-valor-anual-promo="{{ CONFIG.reglas_negocio.valor_anual_promocional or CONFIG.reglas_negocio.valor_cuota_promocional or 1500 }}"
+                      data-valor-anual-regular="{{ CONFIG.reglas_negocio.valor_anual_estandar or 2000 }}"
+                      data-valor-inscripcion="{{ CONFIG.reglas_negocio.valor_inscripcion or 2000 }}">
+
+                    <!-- SELECTOR DE SOCIO -->
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Socio / Afiliado</label>
+                        <select name="socio_id" class="form-select" required>
+                            <option value="" disabled {% if not request.args.get('socio_id') %}selected{% endif %}>
+                            -- Seleccionar Socio --
+                            </option>
+                            {% for s in socios %}
+                                <option value="{{ s.id }}"
+                                    {% if request.args.get('socio_id')|string == s.id|string or request.args.get('socio_id')|string == s.nro_socio|string %}selected{% endif %}>
+                                #{{ s.nro_socio or s.id }} - {{ s.apellido }}, {{ s.nombre }} (DNI: {{ s.dni or '-' }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <!-- Cobrador -->
+                        <div class="col-md-6 mb-3">
+                            <label for="cobrador_id" class="form-label fw-bold">Cobrador / Responsable (*)</label>
+                            <select class="form-select" id="cobrador_id" name="cobrador_id" required>
+                                <option value="" disabled selected>Seleccione cobrador...</option>
+                                {% for c in cobradores %}
+                                    <option value="{{ c.id }}">{{ c.nombre }} {{ c.apellido or '' }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Fecha de cobro -->
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_cobro" class="form-label fw-bold">Fecha de Cobro (*)</label>
+                            <input type="date" class="form-control" id="fecha_cobro" name="fecha_cobro" value="{{ hoy }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Tipo de Concepto (Aplica las reglas de negocio) -->
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_concepto" class="form-label fw-bold">Concepto / Tipo de Cobro (*)</label>
+                            <select class="form-select border-primary" id="tipo_concepto" name="tipo_concepto" required>
+                                <option value="cuota_anual" selected>Cuota Anual (Bonificada según fecha)</option>
+                                <option value="inscripcion">Inscripción al Centro</option>
+                                <option value="cuota_mensual">Cuota Mensual Individual</option>
+                                <option value="otro">Otro Importe / Personalizado</option>
+                            </select>
+                        </div>
+
+                        <!-- N° de Recibo -->
+                        <div class="col-md-6 mb-3">
+                            <label for="nro_recibo" class="form-label fw-bold">N° Recibo / Comprobante</label>
+                            <input type="text" class="form-control" id="nro_recibo" name="nro_recibo" placeholder="Ej: R-00124">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Período -->
+                        <div class="col-md-6 mb-3">
+                            <label for="periodo" class="form-label fw-bold">Período (*)</label>
+                            <input type="text" class="form-control" id="periodo" name="periodo" required>
+                        </div>
+
+                        <!-- Monto -->
+                        <div class="col-md-6 mb-3">
+                            <label for="monto" class="form-label fw-bold">Monto ($) (*)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control fw-bold fs-5 text-success" id="monto" name="monto" required>
+                            </div>
+                            <div id="monto_ayuda" class="form-text text-muted">Monto calculado según regla institucional.</div>
+                        </div>
+                    </div>
+
+                    <!-- Método de Pago -->
+                    <div class="mb-3">
+                        <label for="metodo_pago" class="form-label fw-bold">Método de Pago</label>
+                        <select class="form-select" id="metodo_pago" name="metodo_pago">
+                            <option value="Efectivo" selected>Efectivo</option>
+                            <option value="Transferencia">Transferencia Bancaria</option>
+                        </select>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label fw-bold">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="2" placeholder="Detalles u observaciones opcionales..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fs-5 mt-2 shadow-sm">Registrar Cobro y Asentar Caja</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/cobro_cuotas.js') }}"></script>
+{% endblock %}

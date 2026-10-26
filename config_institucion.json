@@ -1,0 +1,78 @@
+{
+    "institucion": {
+        "nombre": "Centro de Jubilados y Pensionados Nacionales El Alto",
+        "subtitulo": "",
+        "cuit": "",
+        "direccion": "",
+        "ciudad_provincia": "",
+        "telefono": "",
+        "email": "",
+        "logo_url": "",
+        "logo": "logo_institucional.jpg"
+    },
+    "autoridades": {
+        "presidente": "Angel Marcelo Costilla",
+        "secretario": "Ana Nieves Rodríguez",
+        "tesorero": "Tesorero/a en Funciones"
+    },
+    "cobradores": [
+        {
+            "id": 1,
+            "nombre": "Cobrador en Sede",
+            "activo": true
+        },
+        {
+            "id": 2,
+            "nombre": "Cobrador a Domicilio",
+            "activo": true
+        }
+    ],
+    "usuarios": [
+        {
+            "usuario": "admin",
+            "nombre": "Administración",
+            "rol": "administracion"
+        },
+        {
+            "usuario": "operador",
+            "nombre": "Mesa de Entradas",
+            "rol": "edicion"
+        },
+        {
+            "usuario": "consulta",
+            "nombre": "Auditoría / Comisión",
+            "rol": "solo_lectura"
+        }
+    ],
+    "reglas_negocio": {
+        "descripcion_general": "Los socios pueden realizar pagos anuales, semestrales o mensuales conforme a sus posibilidades económicas. La suma abonada se distribuye entre los períodos cubiertos.",
+        "politica_anticipada": "La Comisión Directiva establece beneficios por cobro anual o semestral anticipado fijados en diciembre del año en curso, con validez exclusiva para el primer semestre del año siguiente.",
+        "valor_cuota_estandar": 2000.0,
+        "valor_cuota_promocional": 1500.0,
+        "mes_limite_beneficio": 6,
+        "valor_cuota_mensual": 2000.0,
+        "valor_anual_promocional": 1500.0,
+        "valor_anual_estandar": 2000.0,
+        "valor_inscripcion": 2000.0
+    },
+    "actividades": {
+        "gimnasia": "Gimnasia para Adultos Mayores: Lunes, Miercoles y Viernes de 17:00 a 18 hs.",
+        "bingo": "Bingo Familiar Solidario: Programado con premios institucionales.",
+        "festejos": "Día del Jubilado, Almuerzos de Camaradería y Cierre de Año."
+    },
+
+
+  "comision_directiva": [
+    {"cargo": "Presidente", "nombre": "Ángel Marcelo Costilla", "domicilio": "Tintigasta", "telefono": "3815416080", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Secretaria", "nombre": "Ana Nieves del Valle Rodríguez", "domicilio": "Tintigasta", "telefono": "3815305526", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Tesorera", "nombre": "Mirtha Gladys Jerez", "domicilio": "Guayamba", "telefono": "3834359991", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Vocal Titular", "nombre": "Lázaro Valentín Leiva", "domicilio": "Guayamba", "telefono": "3834590609", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Vocal Titular", "nombre": "Esther Elsa Castillo", "domicilio": "Guayamba", "telefono": "3834377312", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Vocal Suplente", "nombre": "Blanca Nieves Luna", "domicilio": "Villa El Alto", "telefono": "3834002917", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Vocal Suplente", "nombre": "Luis Bartolomé Ávila", "domicilio": "Guayamba", "telefono": "3834221873", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Revisor de Cuentas Tit.", "nombre": "José Gregorio Cisneros", "domicilio": "Guayamba", "telefono": "3834193213", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Revisor de Cuentas Tit.", "nombre": "José Raúl Picón", "domicilio": "Tintigasta", "telefono": "3816439137", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Revisor de Cuentas Sup.", "nombre": "Jacinta Regina Ávila", "domicilio": "Guayamba", "telefono": "3834252265", "inicio": "10/02/2026", "fin": "10/02/2028"},
+    {"cargo": "Revisor de Cuentas Sup.", "nombre": "Blanca Alicia Pereyra", "domicilio": "Guayamba", "telefono": "3834643823", "inicio": "10/02/2026", "fin": "10/02/2028"}
+  ]
+}

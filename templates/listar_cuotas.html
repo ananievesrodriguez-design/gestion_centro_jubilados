@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Historial de Cobros - Centro de Jubilados{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<style>
+    /* Estilos adicionales si es necesario */
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid px-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0 text-primary fw-bold">Historial de Cobros y Cuotas</h4>
+                    <small class="text-muted">Registro completo de cobranzas vinculadas a socios y cobradores</small>
+                </div>
+                <a href="{{ url_for('registrar_cuota') }}" class="btn btn-success fw-medium">+ Nuevo Cobro</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="tablaCuotas" class="table table-striped table-hover align-middle" style="width:100%">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Recibo</th>
+                                <th>Socio</th>
+                                <th>DNI</th>
+                                <th>Período</th>
+                                <th>Monto</th>
+                                <th>Medio</th>
+                                <th>Cobrador</th>
+                                <th>Estado</th>
+                                <th>Obs.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in cuotas %}
+                            <tr>
+                                <td class="text-nowrap">{{ c.fecha_cobro.strftime('%d/%m/%Y') if c.fecha_cobro else '-' }}</td>
+                                <td><span class="badge bg-secondary">{{ c.nro_recibo or 'S/N' }}</span></td>
+                                <td>
+                                    <strong>{{ c.socio_apellido }}, {{ c.socio_nombre }}</strong>
+                                    {% if c.nro_socio %}
+                                        <small class="text-muted d-block">Socio N° {{ c.nro_socio }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ c.socio_dni }}</td>
+                                <td>{{ c.periodo or '-' }}</td>
+                                <td class="fw-bold text-success">${{ "{:,.2f}".format(c.monto) }}</td>
+                                <td>{{ c.metodo_pago or 'Efectivo' }}</td>
+                                <td>{{ c.cobrador_nombre }} {{ c.cobrador_apellido or '' }}</td>
+                                <td>
+                                    {% if c.estado == 'Pagado' %}
+                                        <span class="badge bg-success-subtle text-success border border-success">Pagado</span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning border border-warning">{{ c.estado }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><small class="text-muted">{{ c.observaciones or '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#tablaCuotas').DataTable({
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            pageLength: 25,
+            order: [[0, 'desc']] // Ordenar por fecha descendente
+        });
+    });
+</script>
+{% endblock %}

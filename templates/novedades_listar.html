@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Novedades - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+    <div class="container py-4" style="max-width: 900px;">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark">📢 Gestión de Novedades</h2>
+            <a href="{{ url_for('configuracion') }}" class="btn btn-outline-secondary btn-sm">⚙️ Volver a Configuración</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulario Nueva Novedad -->
+        <div class="card card-amigable shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 fw-bold">➕ Nueva Novedad</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('nueva_novedad') }}" enctype="multipart/form-data">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Título de la novedad</label>
+                            <input type="text" name="titulo" class="form-control" placeholder="Ej: Cambio de horario de atención" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Orden de visualización</label>
+                            <input type="number" name="orden" class="form-control" value="0" min="0">
+                            <div class="form-text">Los números más altos aparecen primero.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Imagen (opcional)</label>
+                            <input type="file" name="imagen" class="form-control" accept="image/*">
+                            <div class="form-text">Formatos permitidos: JPG, PNG, WEBP, SVG. Máx. recomendado 2MB.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Contenido / Descripción</label>
+                            <textarea name="contenido" class="form-control" rows="4" placeholder="Describa la novedad para los socios..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input type="checkbox" name="activa" class="form-check-input" checked>
+                                <label class="form-check-label fw-semibold">Activar novedad (visible en el portal de socios)</label>
+                            </div>
+                        </div>
+                        <div class="col-12 text-end mt-3">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold px-4">💾 Guardar Novedad</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Novedades -->
+        <div class="card card-amigable shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark">📋 Novedades Registradas</h5>
+                <span class="badge bg-info text-dark fs-6">{{ novedades|length }} total{% if novedades|length != 1 %}es{% endif %}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-secondary">
+                            <th style="width: 60px;">#</th>
+                            <th style="width: 110px;">Imagen</th>
+                            <th>Título</th>
+                            <th>Contenido</th>
+                            <th class="text-center" style="width: 120px;">Fecha</th>
+                            <th class="text-center" style="width: 100px;">Estado</th>
+                            <th class="text-center" style="width: 170px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if novedades %}
+                            {% for n in novedades %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ n.id }}</td>
+                                <td>
+                                    {% if n.imagen %}
+                                        <img src="{{ url_for('static', filename='img/novedades/' + n.imagen) }}" class="img-preview" alt="Imagen novedad">
+                                    {% else %}
+                                        <div class="bg-light d-flex align-items-center justify-content-center" style="width: 100%; height: 60px; border: 1px dashed #ddd; border-radius: 4px;">
+                                            <span class="text-muted small">Sin imagen</span>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-semibold">{{ n.titulo }}</td>
+                                <td class="text-muted small">{{ (n.contenido or '')[:80] }}{% if (n.contenido or '')|length > 80 %}...{% endif %}</td>
+                                <td class="text-center small">{{ n.fecha_publicacion.strftime('%d/%m/%Y') if n.fecha_publicacion else '-' }}</td>
+                                <td class="text-center">
+                                    {% if n.activa %}
+                                        <span class="badge bg-success">✅ Activa</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">❌ Inactiva</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar{{ n.id }}">
+                                        ✏️ Editar
+                                    </button>
+                                    {% if n.activa %}
+                                    <form method="POST" action="{{ url_for('eliminar_novedad', id=n.id) }}" class="d-inline" onsubmit="return confirm('¿Desactivar esta novedad? Los socios ya no la verán en el portal.')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">🗑️ Desactivar</button>
+                                    </form>
+                                    {% else %}
+                                    <form method="POST" action="{{ url_for('eliminar_novedad', id=n.id) }}" class="d-inline" onsubmit="return confirm('¿Activar esta novedad? Los socios la verán en el portal.')">
+                                        <input type="hidden" name="activar" value="1">
+                                        <button type="submit" class="btn btn-sm btn-outline-success">✅ Activar</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                            <!-- Modal Editar -->
+                            <div class="modal fade" id="modalEditar{{ n.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title fw-bold">✏️ Editar Novedad</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('editar_novedad', id=n.id) }}" enctype="multipart/form-data">
+                                            <div class="modal-body">
+                                                <div class="row g-3">
+                                                    <div class="col-md-8">
+                                                        <label class="form-label fw-semibold">Título</label>
+                                                        <input type="text" name="titulo" class="form-control" value="{{ n.titulo }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Orden</label>
+                                                        <input type="number" name="orden" class="form-control" value="{{ n.orden or 0 }}" min="0">
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Imagen actual</label><br>
+                                                        {% if n.imagen %}
+                                                            <img src="{{ url_for('static', filename='img/novedades/' + n.imagen) }}" class="img-preview mt-2" alt="Imagen actual">
+                                                        {% else %}
+                                                            <span class="text-muted small mt-2">Sin imagen cargada</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Cambiar imagen (opcional)</label>
+                                                        <input type="file" name="imagen" class="form-control" accept="image/*">
+                                                        <div class="form-text">Dejá vacío para mantener la imagen actual.</div>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Contenido</label>
+                                                        <textarea name="contenido" class="form-control" rows="3">{{ n.contenido or '' }}</textarea>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="form-check">
+                                                            <input type="checkbox" name="activa" class="form-check-input" {% if n.activa %}checked{% endif %}>
+                                                            <label class="form-check-label">Activa (visible en el portal)</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">No hay novedades registradas.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}

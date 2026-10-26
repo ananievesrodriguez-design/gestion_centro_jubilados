@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Libro de Caja y Balances - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<style>
+    .dataTables_filter {
+        text-align: right;
+        margin-bottom: 12px;
+    }
+    .dataTables_filter input {
+        padding: 6px 12px 6px 32px !important;
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        font-size: 0.95rem;
+        width: 260px !important;
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 10px center;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        body { background: #fff !important; }
+        .card { border: none !important; box-shadow: none !important; }
+        .table { width: 100% !important; font-size: 10px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid px-4 py-3">
+
+        <!-- Tarjetas de Resumen Financiero -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card card-amigable shadow-sm border-start border-success border-4 h-100">
+                    <div class="card-body">
+                        <span class="text-muted small fw-bold text-uppercase d-block">Total Ingresos</span>
+                        <h3 class="fw-bold text-success mb-0">${{ "{:,.2f}".format(total_ingresos) }}</h3>
+                        <small class="text-secondary">Cuotas sociales + cobros registrados</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-amigable shadow-sm border-start border-danger border-4 h-100">
+                    <div class="card-body">
+                        <span class="text-muted small fw-bold text-uppercase d-block">Total Egresos / Gastos</span>
+                        <h3 class="fw-bold text-danger mb-0">${{ "{:,.2f}".format(total_egresos) }}</h3>
+                        <small class="text-secondary">Gastos operativos y salidas de caja</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-amigable shadow-sm border-start border-primary border-4 h-100">
+                    <div class="card-body">
+                        <span class="text-muted small fw-bold text-uppercase d-block">Saldo de Caja Actual</span>
+                        <h3 class="fw-bold {% if saldo_actual >= 0 %}text-primary{% else %}text-danger{% endif %} mb-0">
+                            ${{ "{:,.2f}".format(saldo_actual) }}
+                        </h3>
+                        <small class="text-secondary">Disponible neto en tesorería</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla Principal de Caja -->
+        <div class="card card-amigable shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h4 class="mb-0 fw-bold text-primary">Libro Diario de Caja</h4>
+                    <small class="text-muted">Movimientos contables detallados de la entidad</small>
+                </div>
+                <div class="d-flex align-items-center gap-2 no-print">
+                    <button type="button" class="btn btn-danger btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoGasto">
+                        📉 - Registrar Gasto / Egreso
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoIngreso">
+                        📈 + Otro Ingreso
+                    </button>
+                    <a href="{{ url_for('caja_exportar_excel') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm">
+                        📥 Descargar Excel
+                    </a>
+                    <a href="{{ url_for('registrar_cuota') }}" class="btn btn-success btn-sm fw-bold shadow-sm">
+                        💵 + Cobrar Cuota
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="table-responsive">
+                    <table id="tablaCaja" class="table table-striped table-hover align-middle w-100">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 95px;">Fecha</th>
+                                <th style="width: 85px;" class="text-center">Tipo</th>
+                                <th style="width: 140px;">Categoría</th>
+                                <th>Concepto</th>
+                                <th>Comprobante</th>
+                                <th>Medio</th>
+                                <th style="width: 130px;" class="text-end">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in movimientos %}
+                            <tr>
+                                <td>
+                                    {{ m.fecha.strftime('%d/%m/%Y') if m.fecha and m.fecha.strftime else (m.fecha or '-') }}
+                                </td>
+                                <td class="text-center">
+                                    {% if (m.tipo or '')|lower == 'ingreso' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Ingreso</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">Egreso</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ m.categoria }}</span></td>
+                                <td>
+                                    <strong>{{ m.concepto }}</strong>
+                                    {% if m.observaciones %}
+                                        <div class="text-muted small fst-italic">{{ m.observaciones }}</div>
+                                    {% endif %}
+                                </td>
+                                <td><span class="text-secondary small">{{ m.comprobante }}</span></td>
+                                <td><span class="text-muted small">{{ m.metodo }}</span></td>
+                                <td class="text-end fw-bold fs-6 {% if (m.tipo or '')|lower == 'ingreso' %}text-success{% else %}text-danger{% endif %}">
+                                    {% if (m.tipo or '')|lower == 'ingreso' %}+{% else %}-{% endif %} ${{ "{:,.2f}".format(m.monto or 0) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR GASTO / EGRESO -->
+    <div class="modal fade" id="modalNuevoGasto" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form action="{{ url_for('registrar_movimiento_caja') }}" method="POST" class="modal-content">
+                <input type="hidden" name="tipo" value="Egreso">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold">📉 Registrar Nuevo Gasto / Egreso</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fecha del Gasto</label>
+                        <input type="date" class="form-control" name="fecha" value="{{ hoy }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Categoría de Gasto</label>
+                        <input type="text" class="form-control" name="categoria" list="listaCategoriasGastos" placeholder="Ej: Servicios, Librería, Limpieza..." required>
+                        <datalist id="listaCategoriasGastos">
+                            <option value="Servicios (Luz, Agua, Internet)">
+                            <option value="Mantenimiento y Reparaciones">
+                            <option value="Librería e Impresiones">
+                            <option value="Artículos de Limpieza">
+                            <option value="Eventos y Festejos">
+                            <option value="Gastos Bancarios / Varios">
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Detalle / Concepto</label>
+                        <input type="text" class="form-control" name="concepto" placeholder="Ej: Pago factura de servicio eléctrico" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Monto ($)</label>
+                            <input type="number" step="0.01" class="form-control fw-bold text-danger" name="monto" placeholder="0.00" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Medio de Pago</label>
+                            <select class="form-select" name="metodo">
+                                <option value="Efectivo" selected>Efectivo</option>
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Débito / Cheque">Débito / Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">N° Factura / Ticket</label>
+                            <input type="text" class="form-control" name="comprobante" placeholder="FAC-00123">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Responsable / Cobrador</label>
+                            <input type="text" class="form-control" name="interviene" placeholder="Tesorero / Empleado">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">Observaciones</label>
+                        <textarea class="form-control" name="observaciones" rows="2" placeholder="Opcional..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger fw-bold">Guardar Gasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR OTRO INGRESO EXTRAORDINARIO -->
+    <div class="modal fade" id="modalNuevoIngreso" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form action="{{ url_for('registrar_movimiento_caja') }}" method="POST" class="modal-content">
+                <input type="hidden" name="tipo" value="Ingreso">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold">📈 Registrar Ingreso Extraordinario</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fecha</label>
+                        <input type="date" class="form-control" name="fecha" value="{{ hoy }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Categoría</label>
+                        <input type="text" class="form-control" name="categoria" list="listaCategoriasIngresos" placeholder="Ej: Donación, Subsidio, Alquiler salón..." required>
+                        <datalist id="listaCategoriasIngresos">
+                            <option value="Donaciones">
+                            <option value="Subsidios Oficiales">
+                            <option value="Alquiler de Salón">
+                            <option value="Venta de Rifas / Eventos">
+                            <option value="Intereses / Otros">
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Concepto</label>
+                        <input type="text" class="form-control" name="concepto" placeholder="Ej: Donación de socio colaborador" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Monto ($)</label>
+                            <input type="number" step="0.01" class="form-control fw-bold text-success" name="monto" placeholder="0.00" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Medio</label>
+                            <select class="form-select" name="metodo">
+                                <option value="Efectivo" selected>Efectivo</option>
+                                <option value="Transferencia">Transferencia</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Comprobante</label>
+                            <input type="text" class="form-control" name="comprobante" placeholder="N° Recibo / Recibo Oficial">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Recibido por</label>
+                            <input type="text" class="form-control" name="interviene" placeholder="Tesorería">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">Observaciones</label>
+                        <textarea class="form-control" name="observaciones" rows="2" placeholder="Opcional..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-bold">Guardar Ingreso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="{{ url_for('static', filename='js/caja.js') }}"></script>
+{% endblock %}

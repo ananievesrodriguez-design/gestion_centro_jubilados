@@ -1,0 +1,92 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4 no-print">
+    <div class="container-fluid px-4">
+        <!-- Logo e Institución -->
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white text-decoration-none" href="{{ url_for('portal_socios') }}">
+            {% if INSTITUCION.logo %}
+                <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}"
+                     alt="Logo"
+                     style="height: 40px; width: auto; max-width: 50px; object-fit: contain;"
+                     class="bg-white rounded p-1 shadow-sm">
+            {% else %}
+                <span class="fs-4">🏛️</span>
+            {% endif %}
+            <span>{{ INSTITUCION.nombre or 'Centro de Jubilados' }}</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
+                aria-controls="navMenu" aria-expanded="false" aria-label="Navegación">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
+                <!-- Portal de Socios -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'portal_socios' %}active fw-bold{% endif %}"
+                       href="{{ url_for('portal_socios') }}">
+                        👤 Portal del Socio
+                    </a>
+                </li>
+                <!-- Padrón Socios -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['listar_socios', 'ficha_socio', 'nuevo_socio', 'editar_socio'] %}active fw-bold{% endif %}"
+                       href="{{ url_for('listar_socios') }}">
+                        👥 Padrón Socios
+                    </a>
+                </li>
+                <!-- Cumpleaños -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'cumpleanos_socios' %}active fw-bold{% endif %}"
+                       href="{{ url_for('cumpleanos_socios') }}">
+                        🎂 Cumpleaños
+                    </a>
+                </li>
+                <!-- Matriz Anual -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'matriz_cuotas' %}active fw-bold{% endif %}"
+                       href="{{ url_for('matriz_cuotas') }}">
+                        📊 Matriz Anual
+                    </a>
+                </li>
+                <!-- Caja y Balances -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'caja_general' %}active fw-bold{% endif %}"
+                       href="{{ url_for('caja_general') }}">
+                        💰 Caja y Balances
+                    </a>
+                </li>
+                <!-- Morosidad -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'control_morosidad' %}active fw-bold{% endif %}"
+                       href="{{ url_for('control_morosidad') }}">
+                        ⚠️ Morosidad
+                    </a>
+                </li>
+                <!-- Novedades -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'listar_novedades' %}active fw-bold{% endif %}"
+                       href="{{ url_for('listar_novedades') }}">
+                        📢 Novedades
+                    </a>
+                </li>
+                <!-- Archivos del Portal -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'listar_archivos_portal' %}active fw-bold{% endif %}"
+                       href="{{ url_for('listar_archivos_portal') }}">
+                        📁 Archivos Portal
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Botones de Acción a la Derecha -->
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ url_for('registrar_cuota') }}" class="btn btn-success btn-sm fw-bold">
+                    + Cobrar Cuota
+                </a>
+                <a href="{{ url_for('configuracion') }}" class="btn btn-outline-light btn-sm" title="Configuración Institucional">
+                    ⚙️
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>

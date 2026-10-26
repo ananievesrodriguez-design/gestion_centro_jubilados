@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Archivos del Portal - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+    <div class="container py-4" style="max-width: 900px;">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark">📁 Archivos del Portal de Socios</h2>
+            <a href="{{ url_for('configuracion') }}" class="btn btn-outline-secondary btn-sm">⚙️ Volver a Configuración</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulario Nuevo Archivo -->
+        <div class="card card-amigable shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 fw-bold">➕ Subir Nuevo Archivo al Portal</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('nueva_archivo_portal') }}" enctype="multipart/form-data">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Título</label>
+                            <input type="text" name="titulo" class="form-control" placeholder="Ej: Estatuto del Centro 2026" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tipo de Archivo</label>
+                            <select name="tipo" class="form-select" required>
+                                <option value="estatuto">📜 Estatuto del Centro</option>
+                                <option value="memoria_balance">📊 Memoria y Balance</option>
+                                <option value="foto">🖼️ Foto para Galería</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Orden</label>
+                            <input type="number" name="orden" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descripción</label>
+                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Breve descripción del archivo..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Seleccionar Archivo</label>
+                            <input type="file" name="archivo" class="form-control" required>
+                            <div class="form-text">
+                                <small>
+                                    <strong>Estatuto / Memoria y Balance:</strong> PDF únicamente.<br>
+                                    <strong>Fotos:</strong> JPG, PNG, WEBP o SVG.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input type="checkbox" name="activa" class="form-check-input" checked>
+                                <label class="form-check-label fw-semibold">Activo (visible en el portal de socios)</label>
+                            </div>
+                        </div>
+                        <div class="col-12 text-end mt-3">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold px-4">📤 Subir Archivo</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Archivos -->
+        <div class="card card-amigable shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark">📋 Archivos Registrados</h5>
+                <span class="badge bg-info text-dark fs-6">{{ archivos|length }} total{% if archivos|length != 1 %}es{% endif %}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-secondary">
+                            <th style="width: 60px;">#</th>
+                            <th>Título</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th class="text-center" style="width: 100px;">Archivo</th>
+                            <th class="text-center" style="width: 100px;">Estado</th>
+                            <th class="text-center" style="width: 180px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if archivos %}
+                            {% for a in archivos %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ a.id }}</td>
+                                <td class="fw-semibold">{{ a.titulo }}</td>
+                                <td>
+                                    {% if a.tipo == 'estatuto' %}
+                                        <span class="badge bg-primary">📜 Estatuto</span>
+                                    {% elif a.tipo == 'memoria_balance' %}
+                                        <span class="badge bg-success">📊 Memoria y Balance</span>
+                                    {% elif a.tipo == 'foto' %}
+                                        <span class="badge bg-info">🖼️ Foto</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ a.tipo }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">{{ (a.descripcion or '')[:60] }}{% if (a.descripcion or '')|length > 60 %}...{% endif %}</td>
+                                <td class="text-center">
+                                    {% if a.archivo %}
+                                        <a href="{{ url_for('descargar_archivo_portal', id=a.id) }}" class="btn btn-sm btn-outline-primary">
+                                            📥 Descargar
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted small">Sin archivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if a.activa %}
+                                        <span class="badge bg-success">✅ Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">❌ Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar{{ a.id }}">
+                                        ✏️ Editar
+                                    </button>
+                                    {% if a.activa %}
+                                    <form method="POST" action="{{ url_for('eliminar_archivo_portal', id=a.id) }}" class="d-inline" onsubmit="return confirm('¿Desactivar este archivo? Los socios ya no lo verán en el portal.')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">🗑️ Desactivar</button>
+                                    </form>
+                                    {% else %}
+                                    <form method="POST" action="{{ url_for('eliminar_archivo_portal', id=a.id) }}" class="d-inline" onsubmit="return confirm('¿Activar este archivo? Los socios lo verán en el portal.')">
+                                        <input type="hidden" name="activar" value="1">
+                                        <button type="submit" class="btn btn-sm btn-outline-success">✅ Activar</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                            <!-- Modal Editar -->
+                            <div class="modal fade" id="modalEditar{{ a.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title fw-bold">✏️ Editar Archivo</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('editar_archivo_portal', id=a.id) }}" enctype="multipart/form-data">
+                                            <div class="modal-body">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Título</label>
+                                                        <input type="text" name="titulo" class="form-control" value="{{ a.titulo }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Tipo</label>
+                                                        <select name="tipo" class="form-select" required>
+                                                            <option value="estatuto" {% if a.tipo == 'estatuto' %}selected{% endif %}>📜 Estatuto del Centro</option>
+                                                            <option value="memoria_balance" {% if a.tipo == 'memoria_balance' %}selected{% endif %}>📊 Memoria y Balance</option>
+                                                            <option value="foto" {% if a.tipo == 'foto' %}selected{% endif %}>🖼️ Foto para Galería</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Orden</label>
+                                                        <input type="number" name="orden" class="form-control" value="{{ a.orden or 0 }}" min="0">
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Descripción</label>
+                                                        <textarea name="descripcion" class="form-control" rows="2">{{ a.descripcion or '' }}</textarea>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Archivo actual</label><br>
+                                                        {% if a.archivo %}
+                                                            <a href="{{ url_for('descargar_archivo_portal', id=a.id) }}" class="btn btn-sm btn-outline-primary">
+                                                                📥 {{ a.archivo }}
+                                                            </a>
+                                                        {% else %}
+                                                            <span class="text-muted small">Sin archivo cargado</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Cambiar archivo (opcional)</label>
+                                                        <input type="file" name="archivo" class="form-control">
+                                                        <div class="form-text">Dejá vacío para mantener el archivo actual.</div>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="form-check">
+                                                            <input type="checkbox" name="activa" class="form-check-input" {% if a.activa %}checked{% endif %}>
+                                                            <label class="form-check-label">Activo (visible en el portal)</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">No hay archivos registrados para el portal.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}

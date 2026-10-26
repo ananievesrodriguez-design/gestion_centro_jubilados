@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Ficha de Socio - {{ socio.apellido }}, {{ socio.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        body { background: white !important; font-size: 13px; }
+        .card { border: 1px solid #ddd !important; box-shadow: none !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container py-3" style="max-width: 960px;">
+
+        <!-- Encabezado con Botones -->
+        <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+            <a href="{{ url_for('listar_socios') }}" class="btn btn-outline-secondary btn-sm">← Volver al Padrón</a>
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-dark btn-sm">🖨️ Imprimir Ficha</button>
+                <a href="{{ url_for('registrar_cuota', socio_id=socio.id) }}" class="btn btn-success btn-sm fw-bold">
+                    💵 + Cobrar Nueva Cuota
+                </a>
+            </div>
+        </div>
+
+        <!-- 1. TARJETA DE DATOS PERSONALES Y ESTADO -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <span class="badge bg-primary fs-6 px-3 py-1">Socio N° {{ socio.nro_socio or socio.id }}</span>
+                    <h3 class="fw-bold text-dark mt-2 mb-0">{{ socio.apellido }}, {{ socio.nombre }}</h3>
+                </div>
+
+                <!-- Formulario para cambiar estado -->
+                <div class="d-flex align-items-center gap-2 no-print">
+                    <form action="{{ url_for('cambiar_estado_socio', id=socio.id) }}" method="POST" class="d-flex align-items-center gap-2 mb-0">
+                        <label class="text-muted small fw-bold mb-0">Estado:</label>
+                        <select name="estado" class="form-select form-select-sm fw-bold" style="width: 140px;">
+                            <option value="Activo" {% if (socio.estado or '')|lower == 'activo' %}selected{% endif %}>🟢 Activo</option>
+                            <option value="Baja" {% if (socio.estado or '')|lower == 'baja' %}selected{% endif %}>🔴 Baja</option>
+                            <option value="Vitalicio" {% if (socio.estado or '')|lower == 'vitalicio' %}selected{% endif %}>⭐ Vitalicio</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Guardar</button>
+                    </form>
+                </div>
+                
+                <div class="d-none d-print-block">
+                    <strong>Estado:</strong> {{ socio.estado or 'Activo' }}
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">DNI:</span>
+                        <strong class="fs-6">{{ socio.dni or '-' }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">Teléfono / Celular:</span>
+                        <strong class="fs-6">{{ socio.telefono or '-' }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">Correo Electrónico:</span>
+                        <strong class="fs-6">{{ socio.email or '-' }}</strong>
+                    </div>
+
+                    <div class="col-md-8">
+                        <span class="text-muted small d-block">Domicilio / Dirección:</span>
+                        <strong class="fs-6">{{ socio.direccion or '-' }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">Fecha de Ingreso:</span>
+                        <strong class="fs-6">{{ socio.fecha_ingreso.strftime('%d/%m/%Y') if socio.fecha_ingreso and socio.fecha_ingreso.strftime else (socio.fecha_ingreso or '-') }}</strong>
+                    </div>
+
+                    {% if socio.fecha_nacimiento %}
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">Fecha de Nacimiento:</span>
+                        <strong class="fs-6">{{ socio.fecha_nacimiento.strftime('%d/%m/%Y') if socio.fecha_nacimiento.strftime else socio.fecha_nacimiento }}</strong>
+                    </div>
+                    {% endif %}
+
+                    {% if socio.observaciones %}
+                    <div class="col-12 mt-3 pt-3 border-top">
+                        <span class="text-muted small d-block">Observaciones:</span>
+                        <p class="mb-0 text-secondary">{{ socio.observaciones }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. HISTORIAL DE CUOTAS Y PAGOS -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-primary">Historial de Pagos y Cuotas</h5>
+                <span class="badge bg-light text-dark border fs-6">
+                    Total Aportado: <strong class="text-success">${{ "{:,.2f}".format(total_aportado) }}</strong>
+                </span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Fecha Pago</th>
+                                <th>Período Cubierto</th>
+                                <th>N° Recibo</th>
+                                <th>Medio</th>
+                                <th class="text-end pe-4">Monto Abonado</th>
+                                <th class="text-center no-print" style="width: 80px;">Recibo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if cuotas %}
+                                {% for c in cuotas %}
+                                <tr>
+                                    <td class="ps-4 text-nowrap">
+                                        {{ c.fecha_cobro.strftime('%d/%m/%Y') if c.fecha_cobro and c.fecha_cobro.strftime else (c.fecha_cobro or '-') }}
+                                    </td>
+                                    <td>
+                                        {% if c.periodo %}
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                                {{ c.periodo }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark border">Año {{ c.anio }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="text-secondary fw-semibold">{{ c.comprobante or c.nro_recibo or '-' }}</span></td>
+                                    <td><span class="badge bg-light text-dark border">{{ c.metodo or c.metodo_pago or 'Efectivo' }}</span></td>
+                                    <td class="text-end pe-4 fw-bold text-success fs-6">
+                                        ${{ "{:,.2f}".format(c.monto or 0) }}
+                                    </td>
+                                    <td class="text-center no-print">
+                                        <!-- Botón para imprimir el recibo oficial -->
+                                        <a href="{{ url_for('imprimir_recibo', cuota_id=c.id) }}" 
+                                           target="_blank" 
+                                           class="btn btn-sm btn-outline-dark py-0 px-2" 
+                                           title="Imprimir Recibo Oficial">
+                                            🖨️
+                                        </a>
+                                        <!-- Botón para editar la cuota -->
+                                        <a href="{{ url_for('editar_cuota', cuota_id=c.id) }}" 
+                                           class="btn btn-sm btn-outline-warning py-0 px-2" 
+                                           title="Editar cuota">
+                                            ✏️
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        No se registran pagos de cuotas para este socio.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}

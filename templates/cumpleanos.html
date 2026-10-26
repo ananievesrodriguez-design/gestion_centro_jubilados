@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Cumpleaños de Socios - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+    <div class="container py-4" style="max-width: 900px;">
+
+        <!-- Encabezado con selector de mes -->
+        <div class="card card-amigable shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h4 class="mb-0 fw-bold text-primary">🎂 Cumpleaños y Aniversarios</h4>
+                    <small class="text-muted">Recordatorio mensual para salutaciones y festejos</small>
+                </div>
+
+                <form method="GET" action="{{ url_for('cumpleanos_socios') }}" class="d-flex align-items-center gap-2">
+                    <label for="mes" class="form-label mb-0 fw-semibold text-secondary">Mes:</label>
+                    <select name="mes" id="mes" class="form-select form-select-sm" style="width: 150px;" onchange="this.form.submit()">
+                        {% for nro, nombre in meses_nombre.items() %}
+                            <option value="{{ nro }}" {% if mes_filtro == nro %}selected{% endif %}>
+                                {{ nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: CUMPLEAÑOS DEL DÍA DE HOY -->
+        <div class="card card-amigable shadow-sm border-0 mb-4">
+            <div class="card-header bg-success text-white py-2 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">🎉 Cumpleaños de Hoy ({{ hoy.strftime('%d/%m') }})</h5>
+                <span class="badge bg-light text-success fs-6">{{ cumple_hoy|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if cumple_hoy %}
+                    <ul class="list-group list-group-flush">
+                        {% for c in cumple_hoy %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <div>
+                                <span class="badge bg-primary me-2">#{{ c.nro_socio or c.id }}</span>
+                                <strong class="fs-5">{{ c.apellido }}, {{ c.nombre }}</strong>
+                                {% if c.edad %}
+                                    <span class="badge bg-warning text-dark ms-2">{{ c.edad|int }} años</span>
+                                {% endif %}
+                                <div class="text-muted small mt-1">
+                                    {% if c.telefono %}
+                                        📞 Tel: {{ c.telefono }}
+                                    {% else %}
+                                        <em>Sin teléfono registrado</em>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <a href="{{ url_for('ficha_socio', id=c.id) }}" class="btn btn-outline-primary btn-sm">
+                                📇 Ficha
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="p-4 text-center text-muted">
+                        Hoy no hay cumpleaños registrados entre los socios activos.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- SECCIÓN: CUMPLEAÑOS DEL MES COMPLETO -->
+        <div class="card card-amigable shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark">
+                    📅 Todos los cumpleaños de {{ meses_nombre[mes_filtro] }}
+                </h5>
+                <span class="badge bg-primary fs-6">{{ cumple_mes|length }} socio{% if cumple_mes|length != 1 %}s{% endif %}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if cumple_mes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 90px;">Día</th>
+                                    <th>Socio</th>
+                                    <th>Teléfono</th>
+                                    <th class="text-center">Edad</th>
+                                    <th class="text-center" style="width: 100px;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in cumple_mes %}
+                                <tr>
+                                    <td class="text-center fw-bold text-primary fs-6">
+                                        {{ "%02d"|format(m.dia|int) }}
+                                    </td>
+                                    <td>
+                                        <span class="text-muted small">#{{ m.nro_socio or m.id }}</span>
+                                        <strong class="d-block">{{ m.apellido }}, {{ m.nombre }}</strong>
+                                    </td>
+                                    <td>{{ m.telefono or '-' }}</td>
+                                    <td class="text-center">
+                                        {% if m.edad %}
+                                            <span class="badge bg-light text-dark border">{{ m.edad|int }} años</span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{{ url_for('ficha_socio', id=m.id) }}" class="btn btn-outline-primary btn-sm py-0 px-2">
+                                            📇 Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="p-4 text-center text-muted">
+                        No hay cumpleaños registrados para el mes de {{ meses_nombre[mes_filtro] }}.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}

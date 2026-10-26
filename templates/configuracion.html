@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración Institucional - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+    <div class="container py-4" style="max-width: 980px;">
+
+        <form method="POST" enctype="multipart/form-data">
+            <!-- 1. DATOS OFICIALES -->
+            <div class="card card-amigable shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0 text-primary">1. Datos Oficiales de la Entidad</h5>
+                </div>
+                <div class="card-body p-4">
+                    <!-- SECCIÓN DE LOGO INSTITUCIONAL -->
+                    <div class="row align-items-center mb-4 p-3 bg-light rounded-3 border">
+                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                            <label class="form-label fw-bold d-block text-secondary small">Logo Actual</label>
+                            {% if cfg.institucion.logo %}
+                                <img src="{{ url_for('static', filename='img/' + cfg.institucion.logo) }}"
+                                     alt="Logo Institucional"
+                                     class="img-thumbnail shadow-sm bg-white"
+                                     style="max-height: 95px; max-width: 150px; object-fit: contain;">
+                            {% else %}
+                                <div class="border rounded p-3 bg-white text-muted small">
+                                    🏛️ <em>Sin logo asignado</em>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <label for="logo" class="form-label fw-bold">Actualizar o Subir Logo</label>
+                            <input class="form-control" type="file" id="logo" name="logo" accept="image/*">
+                            <small class="text-muted">Formatos admitidos: PNG, JPG, JPEG, WEBP o SVG. Se utilizará en el membrete de recibos, fichas y reportes.</small>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Nombre Oficial de la Entidad</label>
+                            <input type="text" class="form-control" name="nombre" value="{{ cfg.institucion.nombre }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Dirección</label>
+                            <input type="text" class="form-control" name="direccion" value="{{ cfg.institucion.direccion }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Ciudad / Provincia</label>
+                            <input type="text" class="form-control" name="ciudad_provincia" value="{{ cfg.institucion.ciudad_provincia }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Teléfono</label>
+                            <input type="text" class="form-control" name="telefono" value="{{ cfg.institucion.telefono }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Email</label>
+                            <input type="email" class="form-control" name="email" value="{{ cfg.institucion.email }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">CUIT</label>
+                            <input type="text" class="form-control" name="cuit" value="{{ cfg.institucion.cuit }}">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Subtítulo</label>
+                            <input type="text" class="form-control" name="subtitulo" value="{{ cfg.institucion.subtitulo }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. AUTORIDADES FIRMANTES -->
+            <div class="card card-amigable shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0 text-primary">2. Autoridades Firmantes de Comisión Directiva</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Presidente/a</label>
+                            <input type="text" class="form-control" name="presidente" value="{{ cfg.autoridades.presidente }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Secretario/a</label>
+                            <input type="text" class="form-control" name="secretario" value="{{ cfg.autoridades.secretario }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Tesorero/a</label>
+                            <input type="text" class="form-control" name="tesorero" value="{{ cfg.autoridades.tesorero }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3 & 4. COBRADORES Y NIVELES DE ACCESO -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card card-amigable shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="fw-bold mb-0 text-primary">3. Cobradores Habilitados</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <ul class="list-group list-group-flush">
+                                {% for cob in cfg.cobradores %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>{{ cob.nombre }}</span>
+                                    <span class="badge bg-success">Habilitado</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card card-amigable shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="fw-bold mb-0 text-primary">4. Roles y Permisos del Sistema</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <ul class="list-group list-group-flush">
+                                {% for u in cfg.usuarios %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <div>
+                                        <strong>{{ u.nombre }}</strong> <small class="text-muted">({{ u.usuario }})</small>
+                                    </div>
+                                    <span class="badge bg-secondary text-uppercase">{{ u.rol }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. REGLAS DE NEGOCIO Y VALORES DE CUOTA -->
+            <div class="card card-amigable shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0 text-primary">5. Reglas Institucionales e Importes de Cuotas</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descripción de Modalidades de Pago</label>
+                        <textarea class="form-control" name="descripcion_general" rows="2">{{ cfg.reglas_negocio.descripcion_general }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Criterio de Beneficio por Pago Anticipado (Semestre)</label>
+                        <textarea class="form-control" name="politica_anticipada" rows="2">{{ cfg.reglas_negocio.politica_anticipada }}</textarea>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Cuota Mensual ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" name="valor_cuota_mensual"
+                                       value="{{ cfg.reglas_negocio.valor_cuota_mensual or cfg.reglas_negocio.valor_cuota_estandar or 200 }}">
+                            </div>
+                            <small class="text-muted">Valor por mes individual.</small>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Anual Bonificada (1° Semestre) ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" name="valor_anual_promocional"
+                                       value="{{ cfg.reglas_negocio.valor_anual_promocional or cfg.reglas_negocio.valor_cuota_promocional or 1500 }}">
+                            </div>
+                            <small class="text-muted">Hasta el 30 de Junio.</small>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Anual Estándar (2° Semestre) ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" name="valor_anual_estandar"
+                                       value="{{ cfg.reglas_negocio.valor_anual_estandar or 2000 }}">
+                            </div>
+                            <small class="text-muted">Desde el 1 de Julio.</small>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Arancel Inscripción ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" name="valor_inscripcion"
+                                       value="{{ cfg.reglas_negocio.valor_inscripcion or 2000 }}">
+                            </div>
+                            <small class="text-muted">Ingreso de nuevo socio.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. ACTIVIDADES PLANIFICADAS -->
+            <div class="card card-amigable shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0 text-primary">6. Actividades Institucionales</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Gimnasia para Adultos Mayores (Días y Horarios)</label>
+                        <input type="text" class="form-control" name="gimnasia" value="{{ cfg.actividades.gimnasia }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Bingo Familiar / Solidario</label>
+                        <input type="text" class="form-control" name="bingo" value="{{ cfg.actividades.bingo }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Festejos Planificados en el Año</label>
+                        <textarea class="form-control" name="festejos" rows="2">{{ cfg.actividades.festejos }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mb-5">
+                <a href="{{ url_for('caja_general') }}" class="btn btn-secondary px-4">Cancelar</a>
+                <button type="submit" class="btn btn-primary fw-bold px-5">💾 Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0 fw-bold">🔐 Iniciar Sesión</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('auth.login') }}">
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-bold">Correo Electrónico (*)</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="correo@ejemplo.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-bold">Contraseña (*)</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary fw-bold">Ingresar</button>
+                    </div>
+                </form>
+                <p class="text-center text-muted small mt-3 mb-0">
+                    Acceso restringido al personal autorizado del Centro de Jubilados.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

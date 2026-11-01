@@ -33,12 +33,12 @@
                     <div class="col-md-12 mb-3">
                         <label class="form-label fw-bold">Socio / Afiliado</label>
                         <select name="socio_id" class="form-select" required>
-                            <option value="" disabled {% if not request.args.get('socio_id') %}selected{% endif %}>
+                            <option value="" disabled {% if not socio_id_inicial %}selected{% endif %}>
                             -- Seleccionar Socio --
                             </option>
                             {% for s in socios %}
                                 <option value="{{ s.id }}"
-                                    {% if request.args.get('socio_id')|string == s.id|string or request.args.get('socio_id')|string == s.nro_socio|string %}selected{% endif %}>
+                                    {% if socio_id_inicial|string == s.id|string %}selected{% endif %}>
                                 #{{ s.nro_socio or s.id }} - {{ s.apellido }}, {{ s.nombre }} (DNI: {{ s.dni or '-' }})
                                 </option>
                             {% endfor %}
@@ -48,9 +48,9 @@
                     <div class="row">
                         <!-- Cobrador -->
                         <div class="col-md-6 mb-3">
-                            <label for="cobrador_id" class="form-label fw-bold">Cobrador / Responsable (*)</label>
-                            <select class="form-select" id="cobrador_id" name="cobrador_id" required>
-                                <option value="" disabled selected>Seleccione cobrador...</option>
+                            <label for="cobrador_id" class="form-label fw-bold">Cobrador / Responsable</label>
+                            <select class="form-select" id="cobrador_id" name="cobrador_id">
+                                <option value="" selected>Sede central / Sin asignar</option>
                                 {% for c in cobradores %}
                                     <option value="{{ c.id }}">{{ c.nombre }} {{ c.apellido or '' }}</option>
                                 {% endfor %}
@@ -69,9 +69,9 @@
                         <div class="col-md-6 mb-3">
                             <label for="tipo_concepto" class="form-label fw-bold">Concepto / Tipo de Cobro (*)</label>
                             <select class="form-select border-primary" id="tipo_concepto" name="tipo_concepto" required>
-                                <option value="cuota_anual" selected>Cuota Anual (Bonificada según fecha)</option>
-                                <option value="inscripcion">Inscripción al Centro</option>
-                                <option value="cuota_mensual">Cuota Mensual Individual</option>
+                                <option value="cuota_anual" {% if tipo_concepto_inicial == 'cuota_anual' %}selected{% endif %}>Cuota Anual (Bonificada según fecha)</option>
+                                <option value="inscripcion" {% if tipo_concepto_inicial == 'inscripcion' %}selected{% endif %}>Inscripción al Centro</option>
+                                <option value="cuota_mensual" {% if tipo_concepto_inicial == 'cuota_mensual' %}selected{% endif %}>Cuota Mensual Individual</option>
                                 <option value="otro">Otro Importe / Personalizado</option>
                             </select>
                         </div>
@@ -87,7 +87,7 @@
                         <!-- Período -->
                         <div class="col-md-6 mb-3">
                             <label for="periodo" class="form-label fw-bold">Período (*)</label>
-                            <input type="text" class="form-control" id="periodo" name="periodo" required>
+                            <input type="text" class="form-control" id="periodo" name="periodo" value="{{ periodo_inicial or '' }}" required>
                         </div>
 
                         <!-- Monto -->
@@ -116,6 +116,10 @@
                         <textarea class="form-control" id="observaciones" name="observaciones" rows="2" placeholder="Detalles u observaciones opcionales..."></textarea>
                     </div>
 
+                    {% if volver_matriz %}
+                    <input type="hidden" name="volver_matriz" value="1">
+                    <input type="hidden" name="anio_matriz" value="{{ anio_matriz }}">
+                    {% endif %}
                     <button type="submit" class="btn btn-primary w-100 py-2 fs-5 mt-2 shadow-sm">Registrar Cobro y Asentar Caja</button>
                 </form>
             </div>

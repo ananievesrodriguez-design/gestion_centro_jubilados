@@ -7,7 +7,7 @@
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold text-dark">📢 Gestión de Novedades</h2>
-            <a href="{{ url_for('configuracion') }}" class="btn btn-outline-secondary btn-sm">⚙️ Volver a Configuración</a>
+            <a href="{{ url_for('admin.configuracion') }}" class="btn btn-outline-secondary btn-sm">⚙️ Volver a Configuración</a>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -27,7 +27,7 @@
                 <h5 class="mb-0 fw-bold">➕ Nueva Novedad</h5>
             </div>
             <div class="card-body p-4">
-                <form method="POST" action="{{ url_for('nueva_novedad') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ url_for('admin.novedades_nueva') }}" enctype="multipart/form-data">
                     <div class="row g-3">
                         <div class="col-md-8">
                             <label class="form-label fw-semibold">Título de la novedad</label>
@@ -109,11 +109,11 @@
                                         ✏️ Editar
                                     </button>
                                     {% if n.activa %}
-                                    <form method="POST" action="{{ url_for('eliminar_novedad', id=n.id) }}" class="d-inline" onsubmit="return confirm('¿Desactivar esta novedad? Los socios ya no la verán en el portal.')">
+                                    <form method="POST" action="{{ url_for('admin.novedades_eliminar',  id=n.id) }}" class="d-inline" onsubmit="return confirm('¿Desactivar esta novedad? Los socios ya no la verán en el portal.')">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">🗑️ Desactivar</button>
                                     </form>
                                     {% else %}
-                                    <form method="POST" action="{{ url_for('eliminar_novedad', id=n.id) }}" class="d-inline" onsubmit="return confirm('¿Activar esta novedad? Los socios la verán en el portal.')">
+                                    <form method="POST" action="{{ url_for('admin.novedades_eliminar',  id=n.id) }}" class="d-inline" onsubmit="return confirm('¿Activar esta novedad? Los socios la verán en el portal.')">
                                         <input type="hidden" name="activar" value="1">
                                         <button type="submit" class="btn btn-sm btn-outline-success">✅ Activar</button>
                                     </form>
@@ -129,7 +129,7 @@
                                             <h5 class="modal-title fw-bold">✏️ Editar Novedad</h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                         </div>
-                                        <form method="POST" action="{{ url_for('editar_novedad', id=n.id) }}" enctype="multipart/form-data">
+                                        <form method="POST" action="{{ url_for('admin.novedades_editar',  id=n.id) }}" enctype="multipart/form-data">
                                             <div class="modal-body">
                                                 <div class="row g-3">
                                                     <div class="col-md-8">

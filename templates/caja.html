@@ -76,10 +76,10 @@
                     <button type="button" class="btn btn-outline-success btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoIngreso">
                         📈 + Otro Ingreso
                     </button>
-                    <a href="{{ url_for('caja_exportar_excel') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm">
+                    <a href="{{ url_for('socios.caja_exportar_excel') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm">
                         📥 Descargar Excel
                     </a>
-                    <a href="{{ url_for('registrar_cuota') }}" class="btn btn-success btn-sm fw-bold shadow-sm">
+                    <a href="{{ url_for('socios.listar_socios') }}" class="btn btn-success btn-sm fw-bold shadow-sm">
                         💵 + Cobrar Cuota
                     </a>
                 </div>
@@ -136,7 +136,7 @@
     <!-- MODAL: REGISTRAR GASTO / EGRESO -->
     <div class="modal fade" id="modalNuevoGasto" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form action="{{ url_for('registrar_movimiento_caja') }}" method="POST" class="modal-content">
+            <form action="{{ url_for('socios.nuevo_movimiento_caja') }}" method="POST" class="modal-content">
                 <input type="hidden" name="tipo" value="Egreso">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title fw-bold">📉 Registrar Nuevo Gasto / Egreso</h5>
@@ -203,7 +203,7 @@
     <!-- MODAL: REGISTRAR OTRO INGRESO EXTRAORDINARIO -->
     <div class="modal fade" id="modalNuevoIngreso" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form action="{{ url_for('registrar_movimiento_caja') }}" method="POST" class="modal-content">
+            <form action="{{ url_for('socios.nuevo_movimiento_caja') }}" method="POST" class="modal-content">
                 <input type="hidden" name="tipo" value="Ingreso">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title fw-bold">📈 Registrar Ingreso Extraordinario</h5>

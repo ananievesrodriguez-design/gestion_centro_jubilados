@@ -10,7 +10,7 @@
                     <h4 class="fw-bold mb-0 text-primary">Editar Ficha de Socio</h4>
                     <small class="text-muted">Modificación de datos institucionales y de contacto</small>
                 </div>
-                <a href="{{ url_for('ficha_socio', id=socio.id) }}" class="btn btn-outline-info btn-sm">
+                <a href="{{ url_for('socios.ficha_socio',  id=socio.id) }}" class="btn btn-outline-info btn-sm">
                     📇 Ver Historial Completo
                 </a>
             </div>
@@ -66,7 +66,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a href="{{ url_for('matriz_cuotas') }}" class="btn btn-secondary px-4">Cancelar</a>
+                        <a href="{{ url_for('socios.matriz_cuotas') }}" class="btn btn-secondary px-4">Cancelar</a>
                         <button type="submit" class="btn btn-primary fw-bold px-4">💾 Guardar Cambios</button>
                     </div>
                 </form>

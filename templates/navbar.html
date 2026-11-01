@@ -1,91 +1,163 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4 no-print">
-    <div class="container-fluid px-4">
-        <!-- Logo e Institución -->
-        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white text-decoration-none" href="{{ url_for('portal_socios') }}">
+<nav class="navbar navbar-expand-xl navbar-dark navbar-gestion no-print">
+    <div class="container-fluid px-3 px-lg-4">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('socios.listar_socios') }}">
             {% if INSTITUCION.logo %}
                 <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}"
-                     alt="Logo"
-                     style="height: 40px; width: auto; max-width: 50px; object-fit: contain;"
-                     class="bg-white rounded p-1 shadow-sm">
+                     alt="" class="navbar-logo">
             {% else %}
-                <span class="fs-4">🏛️</span>
+                <span class="navbar-logo-placeholder" aria-hidden="true">
+                    <i class="fas fa-landmark"></i>
+                </span>
             {% endif %}
-            <span>{{ INSTITUCION.nombre or 'Centro de Jubilados' }}</span>
+            <span class="navbar-brand-copy">
+                <strong>{{ INSTITUCION.nombre or 'Centro de Jubilados' }}</strong>
+                <small>Administración</small>
+            </span>
         </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
-                aria-controls="navMenu" aria-expanded="false" aria-label="Navegación">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuGestion"
+                aria-controls="menuGestion" aria-expanded="false" aria-label="Abrir menú de navegación">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse" id="navMenu">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
-                <!-- Portal de Socios -->
+        <div class="collapse navbar-collapse" id="menuGestion">
+            <ul class="navbar-nav me-auto my-2 my-xl-0">
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'portal_socios' %}active fw-bold{% endif %}"
-                       href="{{ url_for('portal_socios') }}">
-                        👤 Portal del Socio
+                    <a class="nav-link {% if request.endpoint == 'socios.listar_socios' %}active{% endif %}"
+                       href="{{ url_for('socios.listar_socios') }}">
+                        <i class="fas fa-users me-1" aria-hidden="true"></i> Socios
                     </a>
                 </li>
-                <!-- Padrón Socios -->
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint in ['listar_socios', 'ficha_socio', 'nuevo_socio', 'editar_socio'] %}active fw-bold{% endif %}"
-                       href="{{ url_for('listar_socios') }}">
-                        👥 Padrón Socios
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['socios.matriz_cuotas', 'socios.listar_cuotas', 'socios.editar_cuota'] %}active{% endif %}"
+                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-receipt me-1" aria-hidden="true"></i> Cuotas
                     </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'socios.matriz_cuotas' %}active{% endif %}"
+                               href="{{ url_for('socios.matriz_cuotas') }}">
+                                <i class="fas fa-table-cells me-2" aria-hidden="true"></i>Matriz anual
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint in ['socios.listar_cuotas', 'socios.editar_cuota'] %}active{% endif %}"
+                               href="{{ url_for('socios.listar_cuotas') }}">
+                                <i class="fas fa-clock-rotate-left me-2" aria-hidden="true"></i>Historial de cobros
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('socios.listar_socios') }}">
+                                <i class="fas fa-plus me-2" aria-hidden="true"></i>Registrar un cobro
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <!-- Cumpleaños -->
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'cumpleanos_socios' %}active fw-bold{% endif %}"
-                       href="{{ url_for('cumpleanos_socios') }}">
-                        🎂 Cumpleaños
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['socios.listar_caja', 'socios.nuevo_movimiento_caja', 'socios.editar_movimiento_caja', 'socios.balance_periodic'] %}active{% endif %}"
+                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-wallet me-1" aria-hidden="true"></i> Tesorería
                     </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint in ['socios.listar_caja', 'socios.nuevo_movimiento_caja', 'socios.editar_movimiento_caja'] %}active{% endif %}"
+                               href="{{ url_for('socios.listar_caja') }}">
+                                <i class="fas fa-book me-2" aria-hidden="true"></i>Libro de caja
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'socios.balance_periodic' %}active{% endif %}"
+                               href="{{ url_for('socios.balance_periodic') }}">
+                                <i class="fas fa-chart-pie me-2" aria-hidden="true"></i>Balance periódico
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <!-- Matriz Anual -->
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'matriz_cuotas' %}active fw-bold{% endif %}"
-                       href="{{ url_for('matriz_cuotas') }}">
-                        📊 Matriz Anual
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['socios.cumpleanos_socios', 'socios.control_morosidad'] %}active{% endif %}"
+                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-list-check me-1" aria-hidden="true"></i> Consultas
                     </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'socios.cumpleanos_socios' %}active{% endif %}"
+                               href="{{ url_for('socios.cumpleanos_socios') }}">
+                                <i class="fas fa-cake-candles me-2" aria-hidden="true"></i>Cumpleaños
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'socios.control_morosidad' %}active{% endif %}"
+                               href="{{ url_for('socios.control_morosidad') }}">
+                                <i class="fas fa-triangle-exclamation me-2" aria-hidden="true"></i>Morosidad
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <!-- Caja y Balances -->
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'caja_general' %}active fw-bold{% endif %}"
-                       href="{{ url_for('caja_general') }}">
-                        💰 Caja y Balances
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin.listar_novedades', 'admin.cobradores_list', 'admin.listar_archivos_portal', 'admin.configuracion'] %}active{% endif %}"
+                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-gear me-1" aria-hidden="true"></i> Administración
                     </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'admin.listar_novedades' %}active{% endif %}"
+                               href="{{ url_for('admin.listar_novedades') }}">
+                                <i class="fas fa-bullhorn me-2" aria-hidden="true"></i>Novedades
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'admin.cobradores_list' %}active{% endif %}"
+                               href="{{ url_for('admin.cobradores_list') }}">
+                                <i class="fas fa-user-group me-2" aria-hidden="true"></i>Cobradores
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'admin.listar_archivos_portal' %}active{% endif %}"
+                               href="{{ url_for('admin.listar_archivos_portal') }}">
+                                <i class="fas fa-folder-open me-2" aria-hidden="true"></i>Archivos del portal
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'admin.configuracion' %}active{% endif %}"
+                               href="{{ url_for('admin.configuracion') }}">
+                                <i class="fas fa-sliders me-2" aria-hidden="true"></i>Configuración
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <!-- Morosidad -->
+
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'control_morosidad' %}active fw-bold{% endif %}"
-                       href="{{ url_for('control_morosidad') }}">
-                        ⚠️ Morosidad
-                    </a>
-                </li>
-                <!-- Novedades -->
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'listar_novedades' %}active fw-bold{% endif %}"
-                       href="{{ url_for('listar_novedades') }}">
-                        📢 Novedades
-                    </a>
-                </li>
-                <!-- Archivos del Portal -->
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'listar_archivos_portal' %}active fw-bold{% endif %}"
-                       href="{{ url_for('listar_archivos_portal') }}">
-                        📁 Archivos Portal
+                    <a class="nav-link" href="{{ url_for('socios.portal_socios') }}" target="_blank" rel="noopener">
+                        <i class="fas fa-arrow-up-right-from-square me-1" aria-hidden="true"></i>Portal
                     </a>
                 </li>
             </ul>
 
-            <!-- Botones de Acción a la Derecha -->
-            <div class="d-flex align-items-center gap-2">
-                <a href="{{ url_for('registrar_cuota') }}" class="btn btn-success btn-sm fw-bold">
-                    + Cobrar Cuota
+            <div class="navbar-actions d-flex align-items-center gap-2 pb-3 pb-xl-0">
+                <a href="{{ url_for('socios.listar_socios') }}" class="btn btn-cobrar">
+                    <i class="fas fa-circle-plus me-1" aria-hidden="true"></i> Cobrar cuota
                 </a>
-                <a href="{{ url_for('configuracion') }}" class="btn btn-outline-light btn-sm" title="Configuración Institucional">
-                    ⚙️
-                </a>
+                {% if is_authenticated %}
+                <div class="dropdown">
+                    <button class="btn btn-user dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1" aria-hidden="true"></i>
+                        {{ current_user.nombre if current_user else 'Administración' }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-right-from-bracket me-2" aria-hidden="true"></i>Cerrar sesión
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

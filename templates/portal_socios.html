@@ -50,6 +50,21 @@
 
     h1, h2, h3, h4, h5 { font-weight: 700; }
     .text-gris-oscuro { color: #495057; }
+    .portal-admin-access {
+        position: fixed;
+        right: 12px;
+        bottom: 10px;
+        z-index: 20;
+        padding: 8px;
+        color: #6c757d;
+        opacity: 0.3;
+        text-decoration: none;
+    }
+    .portal-admin-access:hover,
+    .portal-admin-access:focus {
+        color: #0d6efd;
+        opacity: 1;
+    }
 </style>
 {% endblock %}
 
@@ -98,7 +113,7 @@
                     <h5 class="fw-bold text-dark mb-2">Ver mi último recibo</h5>
                     <p class="text-muted small mb-3">Descargá el comprobante de tu último pago.</p>
                     {% if ultimo_pago %}
-                        <a href="{{ url_for('imprimir_recibo', cuota_id=ultimo_pago.id) }}" target="_blank" class="btn btn-success btn-grande w-100">
+                        <a href="{{ url_for('socios.imprimir_recibo',  cuota_id=ultimo_pago.id) }}" target="_blank" class="btn btn-success btn-grande w-100">
                             📥 Descargar PDF
                         </a>
                     {% else %}
@@ -117,7 +132,7 @@
                     <h5 class="fw-bold text-dark mb-2">Novedades del Centro</h5>
                     <p class="text-muted small mb-3">Enterate de los avisos y comunicados recientes.</p>
                     {% if novedades %}
-                        <a href="{{ url_for('portal_socios') }}#seccionNovedades" class="btn btn-info btn-grande w-100">
+                        <a href="{{ url_for('socios.portal_socios') }}#seccionNovedades" class="btn btn-info btn-grande w-100">
                             Ver Novedades
                         </a>
                     {% else %}
@@ -136,7 +151,7 @@
                     <h5 class="fw-bold text-dark mb-2">Cumpleaños de Hoy</h5>
                     <p class="text-muted small mb-3">{{ cumple_hoy|length }} socio{% if cumple_hoy|length != 1 %}s{% endif %} celebran hoy.</p>
                     {% if cumple_hoy %}
-                        <a href="{{ url_for('portal_socios') }}#seccionCumpleHoy" class="btn btn-warning btn-grande w-100 text-dark">
+                        <a href="{{ url_for('socios.portal_socios') }}#seccionCumpleHoy" class="btn btn-warning btn-grande w-100 text-dark">
                             Ver Listado
                         </a>
                     {% else %}
@@ -157,7 +172,7 @@
                 <p class="text-secondary small mb-0">Ingresá tu número de documento o N° de socio para consultar tu estado</p>
             </div>
 
-            <form method="POST" action="{{ url_for('portal_socios') }}" class="mt-2">
+            <form method="POST" action="{{ url_for('socios.portal_socios') }}" class="mt-2">
                 <div class="input-group">
                     <input type="text" name="criterio" class="form-control input-grande text-center fw-bold"
                            placeholder="Ingrese su DNI o N° de Socio" value="{{ termino }}" required autofocus>
@@ -228,7 +243,7 @@
                                 </div>
                                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
                                     {% if ultimo_pago %}
-                                        <a href="{{ url_for('imprimir_recibo', cuota_id=ultimo_pago.id) }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold">
+                                        <a href="{{ url_for('socios.imprimir_recibo',  cuota_id=ultimo_pago.id) }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold">
                                             📄 Ver Recibo
                                         </a>
                                     {% endif %}
@@ -258,7 +273,7 @@
                                             <td class="text-muted small">{{ c.comprobante or '-' }}</td>
                                             <td class="text-end fw-bold text-success">${{ "{:,.2f}".format(c.monto or 0) }}</td>
                                             <td class="text-center">
-                                                <a href="{{ url_for('imprimir_recibo', cuota_id=c.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-2">
+                                                <a href="{{ url_for('socios.imprimir_recibo',  cuota_id=c.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-2">
                                                     📥 PDF
                                                 </a>
                                             </td>
@@ -416,7 +431,7 @@
                         <h5 class="fw-bold text-dark mb-2">Estatuto del Centro</h5>
                         <p class="text-muted small mb-3">Descargá el estatuto institucional vigente.</p>
                         {% if estatuto %}
-                            <a href="{{ url_for('descargar_archivo_portal', id=estatuto[0].id) }}" class="btn btn-primary btn-grande w-100">
+                            <a href="{{ url_for('socios.descargar_archivo_portal',  id=estatuto[0].id) }}" class="btn btn-primary btn-grande w-100">
                                 📄 Descargar PDF
                             </a>
                         {% else %}
@@ -435,7 +450,7 @@
                         <h5 class="fw-bold text-dark mb-2">Memoria y Balance</h5>
                         <p class="text-muted small mb-3">Memoria anual y balance del ejercicio cerrado.</p>
                         {% if memoria_balance %}
-                            <a href="{{ url_for('descargar_archivo_portal', id=memoria_balance[0].id) }}" class="btn btn-success btn-grande w-100">
+                            <a href="{{ url_for('socios.descargar_archivo_portal',  id=memoria_balance[0].id) }}" class="btn btn-success btn-grande w-100">
                                 📄 Descargar PDF
                             </a>
                         {% else %}
@@ -454,7 +469,7 @@
                         <h5 class="fw-bold text-dark mb-2">Galería de Fotos</h5>
                         <p class="text-muted small mb-3">Fotos de eventos y actividades del centro.</p>
                         {% if fotos_portal %}
-                            <a href="{{ url_for('portal_socios') }}#seccionFotos" class="btn btn-info btn-grande w-100">
+                            <a href="{{ url_for('socios.portal_socios') }}#seccionFotos" class="btn btn-info btn-grande w-100">
                                 Ver Galería
                             </a>
                         {% else %}
@@ -483,7 +498,7 @@
                 <div class="col-md-6 col-lg-4 col-xl-3">
                     <div class="card card-amigable h-100 p-2">
                         {% if f.archivo %}
-                            <a href="{{ url_for('descargar_archivo_portal', id=f.id) }}" class="d-block">
+                            <a href="{{ url_for('socios.descargar_archivo_portal',  id=f.id) }}" class="d-block">
                                 <img src="{{ url_for('static', filename='fotos_portal/' + f.archivo) }}" class="img-fluid rounded-3" alt="{{ f.titulo }}" style="width: 100%; height: 200px; object-fit: cover;">
                             </a>
                         {% else %}
@@ -494,7 +509,7 @@
                         <div class="p-3">
                             <h6 class="fw-bold text-dark mb-1">{{ f.titulo }}</h6>
                             <p class="text-muted small mb-2">{{ f.descripcion or '' }}</p>
-                            <a href="{{ url_for('descargar_archivo_portal', id=f.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                            <a href="{{ url_for('socios.descargar_archivo_portal',  id=f.id) }}" class="btn btn-outline-primary btn-sm w-100">
                                 📥 Descargar
                             </a>
                         </div>
@@ -603,6 +618,10 @@
         </div>
     </div>
 </div>
+
+<a href="{{ url_for('auth.login') }}" class="portal-admin-access" aria-label="Acceso de administración" title="Acceso de administración">
+    <i class="fas fa-lock" aria-hidden="true"></i>
+</a>
 
 {% endblock %}
 

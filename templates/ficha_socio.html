@@ -17,10 +17,10 @@
 
         <!-- Encabezado con Botones -->
         <div class="d-flex justify-content-between align-items-center mb-3 no-print">
-            <a href="{{ url_for('listar_socios') }}" class="btn btn-outline-secondary btn-sm">← Volver al Padrón</a>
+            <a href="{{ url_for('socios.listar_socios') }}" class="btn btn-outline-secondary btn-sm">← Volver al Padrón</a>
             <div class="d-flex gap-2">
                 <button onclick="window.print()" class="btn btn-dark btn-sm">🖨️ Imprimir Ficha</button>
-                <a href="{{ url_for('registrar_cuota', socio_id=socio.id) }}" class="btn btn-success btn-sm fw-bold">
+                <a href="{{ url_for('socios.registrar_cuota',  socio_id=socio.id) }}" class="btn btn-success btn-sm fw-bold">
                     💵 + Cobrar Nueva Cuota
                 </a>
             </div>
@@ -36,7 +36,7 @@
 
                 <!-- Formulario para cambiar estado -->
                 <div class="d-flex align-items-center gap-2 no-print">
-                    <form action="{{ url_for('cambiar_estado_socio', id=socio.id) }}" method="POST" class="d-flex align-items-center gap-2 mb-0">
+                    <form action="{{ url_for('socios.cambiar_estado_socio',  id=socio.id) }}" method="POST" class="d-flex align-items-center gap-2 mb-0">
                         <label class="text-muted small fw-bold mb-0">Estado:</label>
                         <select name="estado" class="form-select form-select-sm fw-bold" style="width: 140px;">
                             <option value="Activo" {% if (socio.estado or '')|lower == 'activo' %}selected{% endif %}>🟢 Activo</option>
@@ -137,15 +137,15 @@
                                     </td>
                                     <td class="text-center no-print">
                                         <!-- Botón para imprimir el recibo oficial -->
-                                        <a href="{{ url_for('imprimir_recibo', cuota_id=c.id) }}" 
-                                           target="_blank" 
-                                           class="btn btn-sm btn-outline-dark py-0 px-2" 
+                                        <a href="{{ url_for('socios.imprimir_recibo',  cuota_id=c.id) }}"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-dark py-0 px-2"
                                            title="Imprimir Recibo Oficial">
                                             🖨️
                                         </a>
                                         <!-- Botón para editar la cuota -->
-                                        <a href="{{ url_for('editar_cuota', cuota_id=c.id) }}" 
-                                           class="btn btn-sm btn-outline-warning py-0 px-2" 
+                                        <a href="{{ url_for('socios.editar_cuota',  cuota_id=c.id) }}"
+                                           class="btn btn-sm btn-outline-warning py-0 px-2"
                                            title="Editar cuota">
                                             ✏️
                                         </a>

@@ -15,3 +15,25 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .vscode/
+
+#prueba de conexión
+# Scripts locales de diagnóstico
+test_conexion.py
+check_tabla.py
+
+# Credenciales y configuración local con datos personales
+.env.*
+!.env.example
+config_institucion.json
+datos.json
+GIT.txt
+
+# Datos de socios y respaldos locales
+*.csv
+*.docx
+
+# Archivos generados y cargas locales
+__pycache__/
+static/documentos/*
+static/fotos_portal/*
+static/img/novedades/*

@@ -24,9 +24,10 @@
     <!-- Botones Superiores -->
     <div class="d-flex justify-content-between align-items-center mb-3 no-print">
         <div class="btn-group">
-            <a href="{{ url_for('listar_caja') }}" class="btn btn-sm {% if not anio_param %}btn-primary{% else %}btn-outline-secondary{% endif %}">Todo el Histórico</a>
-            <a href="{{ url_for('listar_caja', anio='2026') }}" class="btn btn-sm {% if anio_param == '2026' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Año 2026</a>
-            <a href="{{ url_for('listar_caja', anio='2025') }}" class="btn btn-sm {% if anio_param == '2025' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Año 2025</a>
+            <a href="{{ url_for('socios.listar_caja') }}" class="btn btn-sm {% if not anio_param %}btn-primary{% else %}btn-outline-secondary{% endif %}">Todo el Histórico</a>
+            {% for anio in [anio_actual, anio_actual - 1] %}
+            <a href="{{ url_for('socios.listar_caja', anio=anio) }}" class="btn btn-sm {% if anio_param == anio|string %}btn-primary{% else %}btn-outline-secondary{% endif %}">Año {{ anio }}</a>
+            {% endfor %}
         </div>
     </div>
 
@@ -36,15 +37,15 @@
         <div class="btn-group" style="flex-wrap: wrap;">
             {% for nro in range(1, 13) %}
                 {% set nombre_mes = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][nro-1] %}
-                <a href="{{ url_for('listar_caja', anio=anio_param, mes=nro) }}" class="btn btn-sm {% if mes_param == nro|string %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ nombre_mes }}</a>
+                <a href="{{ url_for('socios.listar_caja',  anio=anio_param, mes=nro) }}" class="btn btn-sm {% if mes_param == nro|string %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ nombre_mes }}</a>
             {% endfor %}
         </div>
     </div>
     {% endif %}
 
     <div class="d-flex gap-2">
-        <a href="{{ url_for('nuevo_movimiento_caja') }}" class="btn btn-outline-primary btn-sm">+ Cargar Movimiento</a>
-        <a href="{{ url_for('caja_exportar_excel_balance', anio=anio_param, mes=mes_param) }}" class="btn btn-outline-primary btn-sm fw-bold">
+        <a href="{{ url_for('socios.nuevo_movimiento_caja') }}" class="btn btn-outline-primary btn-sm">+ Cargar Movimiento</a>
+        <a href="{{ url_for('socios.caja_exportar_excel',  anio=anio_param, mes=mes_param) }}" class="btn btn-outline-primary btn-sm fw-bold">
             📥 Descargar Excel
         </a>
         <button onclick="window.print()" class="btn btn-dark btn-sm">🖨️ Imprimir / PDF</button>
@@ -117,7 +118,7 @@
                             <td class="small text-muted">{{ item.comprobante or '-' }} / {{ item.interviene or '-' }}</td>
                             <td class="text-end text-success">${{ "{:,.2f}".format(item.total_concepto) }}</td>
                             <td class="text-center no-print">
-                                <a href="{{ url_for('editar_movimiento_caja', id=item.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">✏️ Editar</a>
+                                <a href="{{ url_for('socios.editar_movimiento_caja',  id=item.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">✏️ Editar</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -158,7 +159,7 @@
                                 <td class="small text-muted">{{ item.comprobante or '-' }} / {{ item.interviene or '-' }}</td>
                                 <td class="text-end text-danger">-${{ "{:,.2f}".format(item.total_concepto) }}</td>
                                 <td class="text-center no-print">
-                                    <a href="{{ url_for('editar_movimiento_caja', id=item.id) }}" class="btn btn-sm btn-outline-danger py-0 px-2">✏️ Editar</a>
+                                    <a href="{{ url_for('socios.editar_movimiento_caja',  id=item.id) }}" class="btn btn-sm btn-outline-danger py-0 px-2">✏️ Editar</a>
                                 </td>
                             </tr>
                             {% endfor %}

@@ -13,7 +13,7 @@
                     <small class="text-muted">Recordatorio mensual para salutaciones y festejos</small>
                 </div>
 
-                <form method="GET" action="{{ url_for('cumpleanos_socios') }}" class="d-flex align-items-center gap-2">
+                <form method="GET" action="{{ url_for('socios.cumpleanos_socios') }}" class="d-flex align-items-center gap-2">
                     <label for="mes" class="form-label mb-0 fw-semibold text-secondary">Mes:</label>
                     <select name="mes" id="mes" class="form-select form-select-sm" style="width: 150px;" onchange="this.form.submit()">
                         {% for nro, nombre in meses_nombre.items() %}
@@ -51,7 +51,7 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <a href="{{ url_for('ficha_socio', id=c.id) }}" class="btn btn-outline-primary btn-sm">
+                            <a href="{{ url_for('socios.ficha_socio',  id=c.id) }}" class="btn btn-outline-primary btn-sm">
                                 📇 Ficha
                             </a>
                         </li>
@@ -105,7 +105,7 @@
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        <a href="{{ url_for('ficha_socio', id=m.id) }}" class="btn btn-outline-primary btn-sm py-0 px-2">
+                                        <a href="{{ url_for('socios.ficha_socio',  id=m.id) }}" class="btn btn-outline-primary btn-sm py-0 px-2">
                                             📇 Ver
                                         </a>
                                     </td>

@@ -7,7 +7,7 @@
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold text-dark">📁 Archivos del Portal de Socios</h2>
-            <a href="{{ url_for('configuracion') }}" class="btn btn-outline-secondary btn-sm">⚙️ Volver a Configuración</a>
+            <a href="{{ url_for('admin.configuracion') }}" class="btn btn-outline-secondary btn-sm">⚙️ Volver a Configuración</a>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -27,7 +27,7 @@
                 <h5 class="mb-0 fw-bold">➕ Subir Nuevo Archivo al Portal</h5>
             </div>
             <div class="card-body p-4">
-                <form method="POST" action="{{ url_for('nueva_archivo_portal') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ url_for('admin.archivos_portal_nueva') }}" enctype="multipart/form-data">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Título</label>
@@ -112,7 +112,7 @@
                                 <td class="text-muted small">{{ (a.descripcion or '')[:60] }}{% if (a.descripcion or '')|length > 60 %}...{% endif %}</td>
                                 <td class="text-center">
                                     {% if a.archivo %}
-                                        <a href="{{ url_for('descargar_archivo_portal', id=a.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <a href="{{ url_for('socios.descargar_archivo_portal',  id=a.id) }}" class="btn btn-sm btn-outline-primary">
                                             📥 Descargar
                                         </a>
                                     {% else %}
@@ -131,11 +131,11 @@
                                         ✏️ Editar
                                     </button>
                                     {% if a.activa %}
-                                    <form method="POST" action="{{ url_for('eliminar_archivo_portal', id=a.id) }}" class="d-inline" onsubmit="return confirm('¿Desactivar este archivo? Los socios ya no lo verán en el portal.')">
+                                    <form method="POST" action="{{ url_for('admin.archivos_portal_eliminar',  id=a.id) }}" class="d-inline" onsubmit="return confirm('¿Desactivar este archivo? Los socios ya no lo verán en el portal.')">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">🗑️ Desactivar</button>
                                     </form>
                                     {% else %}
-                                    <form method="POST" action="{{ url_for('eliminar_archivo_portal', id=a.id) }}" class="d-inline" onsubmit="return confirm('¿Activar este archivo? Los socios lo verán en el portal.')">
+                                    <form method="POST" action="{{ url_for('admin.archivos_portal_eliminar',  id=a.id) }}" class="d-inline" onsubmit="return confirm('¿Activar este archivo? Los socios lo verán en el portal.')">
                                         <input type="hidden" name="activar" value="1">
                                         <button type="submit" class="btn btn-sm btn-outline-success">✅ Activar</button>
                                     </form>
@@ -151,7 +151,7 @@
                                             <h5 class="modal-title fw-bold">✏️ Editar Archivo</h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                         </div>
-                                        <form method="POST" action="{{ url_for('editar_archivo_portal', id=a.id) }}" enctype="multipart/form-data">
+                                        <form method="POST" action="{{ url_for('admin.archivos_portal_editar',  id=a.id) }}" enctype="multipart/form-data">
                                             <div class="modal-body">
                                                 <div class="row g-3">
                                                     <div class="col-md-6">
@@ -177,7 +177,7 @@
                                                     <div class="col-12">
                                                         <label class="form-label fw-semibold">Archivo actual</label><br>
                                                         {% if a.archivo %}
-                                                            <a href="{{ url_for('descargar_archivo_portal', id=a.id) }}" class="btn btn-sm btn-outline-primary">
+                                                            <a href="{{ url_for('socios.descargar_archivo_portal',  id=a.id) }}" class="btn btn-sm btn-outline-primary">
                                                                 📥 {{ a.archivo }}
                                                             </a>
                                                         {% else %}

@@ -318,6 +318,259 @@ body {
     padding-bottom: 1.5rem !important;
 }
 
+/* Navegación administrativa */
+.navbar-gestion {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    min-height: 76px;
+    padding: 0.55rem 0;
+    background: linear-gradient(110deg, #123d67 0%, #145b83 58%, #167a85 100%);
+    box-shadow: 0 4px 18px rgba(17, 47, 74, 0.18);
+}
+
+.navbar-gestion .navbar-brand {
+    margin-right: 1.5rem;
+    color: #fff;
+}
+
+.navbar-logo,
+.navbar-logo-placeholder {
+    display: inline-flex;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #145b83;
+    object-fit: contain;
+    padding: 4px;
+}
+
+.navbar-logo-placeholder {
+    font-size: 1.25rem;
+}
+
+.navbar-brand-copy {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.navbar-brand-copy strong {
+    max-width: 230px;
+    overflow: hidden;
+    font-size: 0.96rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.navbar-brand-copy small {
+    margin-top: 3px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+}
+
+.navbar-gestion .navbar-nav {
+    gap: 0.15rem;
+}
+
+.navbar-gestion .nav-link {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    padding: 0.65rem 0.8rem !important;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.88) !important;
+    font-size: 0.94rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.navbar-gestion .nav-link:hover,
+.navbar-gestion .nav-link:focus-visible,
+.navbar-gestion .nav-link.active,
+.navbar-gestion .show > .nav-link {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff !important;
+}
+
+.navbar-gestion .dropdown-menu {
+    min-width: 230px;
+    margin-top: 0.35rem;
+    padding: 0.5rem;
+    border: 1px solid rgba(20, 91, 131, 0.1);
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(20, 45, 70, 0.18);
+}
+
+.navbar-gestion .dropdown-item {
+    padding: 0.65rem 0.75rem;
+    border-radius: 9px;
+    color: #34495e;
+    font-size: 0.94rem;
+    font-weight: 500;
+}
+
+.navbar-gestion .dropdown-item:hover,
+.navbar-gestion .dropdown-item:focus,
+.navbar-gestion .dropdown-item.active {
+    background: #eaf3f8;
+    color: #145b83;
+}
+
+.navbar-gestion .dropdown-divider {
+    margin: 0.4rem 0;
+}
+
+.navbar-gestion .navbar-actions {
+    padding-left: 1rem;
+}
+
+.navbar-gestion .btn-cobrar {
+    min-height: 42px;
+    padding: 0.55rem 1rem;
+    border: 1px solid #d5f3e5;
+    border-radius: 10px;
+    background: #e4f7ed;
+    color: #17613d;
+    font-size: 0.94rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.navbar-gestion .btn-cobrar:hover,
+.navbar-gestion .btn-cobrar:focus-visible {
+    background: #fff;
+    color: #124f33;
+}
+
+.navbar-gestion .btn-user {
+    min-height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.navbar-gestion .btn-user:hover,
+.navbar-gestion .btn-user:focus-visible {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.navbar-gestion .navbar-toggler {
+    min-width: 46px;
+    min-height: 44px;
+    border-color: rgba(255, 255, 255, 0.45);
+    border-radius: 10px;
+}
+
+.app-main > .container-fluid {
+    max-width: 1680px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.app-main .card {
+    border-radius: var(--border-radius);
+}
+
+.app-main .card-header {
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+}
+
+.app-main .btn {
+    font-weight: 600;
+}
+
+.app-main .table thead th {
+    color: #34495e;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.app-main .table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.app-main .form-control:focus,
+.app-main .form-select:focus {
+    border-color: #4a9ab5;
+    box-shadow: 0 0 0 0.2rem rgba(22, 122, 133, 0.16);
+}
+
+.app-main :focus-visible,
+.navbar-gestion :focus-visible {
+    outline: 3px solid rgba(255, 193, 7, 0.9);
+    outline-offset: 2px;
+}
+
+@media (max-width: 1199.98px) {
+    .navbar-gestion .navbar-collapse {
+        padding-top: 0.75rem;
+    }
+
+    .navbar-gestion .navbar-nav {
+        align-items: stretch !important;
+    }
+
+    .navbar-gestion .navbar-actions {
+        align-items: stretch !important;
+        flex-direction: column;
+        padding: 0.5rem 0 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .navbar-gestion .navbar-actions > *,
+    .navbar-gestion .navbar-actions .btn {
+        width: 100%;
+        text-align: left;
+    }
+
+    .navbar-gestion .navbar-actions .dropdown-menu {
+        width: 100%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .navbar-gestion {
+        min-height: 68px;
+    }
+
+    .navbar-logo,
+    .navbar-logo-placeholder {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+
+    .navbar-brand-copy strong {
+        max-width: 190px;
+        font-size: 0.9rem;
+    }
+
+    .app-main {
+        padding-top: 1rem !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
 .fw-bold {
     font-weight: 700 !important;
 }

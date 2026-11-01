@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4 no-print">
     <div class="container-fluid px-4">
         <!-- Logo e Institución -->
-        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white text-decoration-none" href="{{ url_for('portal_socios') }}">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white text-decoration-none" href="{{ url_for('socios.portal_socios') }}">
             {% if INSTITUCION.logo %}
                 <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}"
                      alt="Logo"
@@ -22,7 +22,7 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
                 <!-- Solo Portal del Socio -->
                 <li class="nav-item">
-                    <a class="nav-link fw-bold text-white" href="{{ url_for('portal_socios') }}">
+                    <a class="nav-link fw-bold text-white" href="{{ url_for('socios.portal_socios') }}">
                         👤 Portal del Socio
                     </a>
                 </li>
@@ -37,7 +37,7 @@
             </div>
             {% else %}
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-light btn-sm">
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light btn-sm">
                     🚪 Salir Administración
                 </a>
             </div>
@@ -55,7 +55,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-                <form method="POST" action="{{ url_for('admin_login') }}">
+                <form method="POST" action="{{ url_for('auth.login') }}">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Clave de Administración</label>
                         <input type="password" name="clave" class="form-control" placeholder="Ingrese la clave" required autofocus>

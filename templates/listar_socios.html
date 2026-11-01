@@ -42,16 +42,16 @@
                     <small class="text-muted">Nómina oficial de afiliados de la institución</small>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{{ url_for('cumpleanos_socios') }}" class="btn btn-outline-info btn-sm fw-semibold">
+                    <a href="{{ url_for('socios.cumpleanos_socios') }}" class="btn btn-outline-info btn-sm fw-semibold">
                         🎂 Cumpleaños
                     </a>
-                    <a href="{{ url_for('imprimir_padron') }}" target="_blank" class="btn btn-outline-secondary btn-sm fw-semibold">
+                    <a href="{{ url_for('socios.imprimir_padron') }}" target="_blank" class="btn btn-outline-secondary btn-sm fw-semibold">
                         📑 Imprimir Padrón
                     </a>
-                    <a href="{{ url_for('nuevo_socio') }}" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                    <a href="{{ url_for('socios.nuevo_socio') }}" class="btn btn-primary btn-sm fw-bold shadow-sm">
                         👤 + Nuevo Socio
                     </a>
-                    <a href="{{ url_for('registrar_cuota') }}" class="btn btn-success btn-sm fw-bold shadow-sm">
+                    <a href="{{ url_for('socios.listar_socios') }}" class="btn btn-success btn-sm fw-bold shadow-sm">
                         💵 + Cobrar Cuota
                     </a>
                 </div>
@@ -93,7 +93,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
-                                    <a href="{{ url_for('ficha_socio', id=s.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">
+                                    <a href="{{ url_for('socios.ficha_socio',  id=s.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">
                                         📇 Ver Ficha
                                     </a>
                                 </td>

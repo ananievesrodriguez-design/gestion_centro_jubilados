@@ -15,7 +15,7 @@
     <div class="container-fluid px-4">
         <span class="navbar-brand fw-bold">Centro de Jubilados</span>
         <div class="navbar-nav ms-auto">
-            <a class="nav-link text-white" href="{{ url_for('listar_socios') }}">← Volver al Padrón</a>
+            <a class="nav-link text-white" href="{{ url_for('socios.listar_socios') }}">← Volver al Padrón</a>
         </div>
     </div>
 </nav>
@@ -85,7 +85,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                    <a href="{{ url_for('listar_socios') }}" class="btn btn-secondary px-4">Cancelar</a>
+                    <a href="{{ url_for('socios.listar_socios') }}" class="btn btn-secondary px-4">Cancelar</a>
                     <button type="submit" class="btn btn-primary px-4 fw-bold">Guardar Socio</button>
                 </div>
             </form>

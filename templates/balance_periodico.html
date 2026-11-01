@@ -28,7 +28,7 @@
                 <p class="text-secondary small mb-0">Rendición contable y distribución de ingresos/egresos</p>
             </div>
             <div class="d-flex align-items-center gap-2 no-print">
-                <a href="{{ url_for('exportar_balance_excel', fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}" class="btn btn-outline-success btn-sm fw-bold shadow-sm">
+                <a href="{{ url_for('socios.exportar_balance_excel',  fecha_desde=fecha_desde, fecha_hasta=fecha_hasta) }}" class="btn btn-outline-success btn-sm fw-bold shadow-sm">
                     📊 Descargar Excel (.xlsx)
                 </a>
                 <button onclick="window.print()" class="btn btn-outline-secondary btn-sm fw-semibold">
@@ -39,7 +39,7 @@
 
         <!-- Formulario de Rango de Fechas -->
         <div class="card card-metric p-3 mb-4 no-print bg-white">
-            <form method="GET" action="{{ url_for('balance_periodico') }}" class="row g-2 align-items-end">
+            <form method="GET" action="{{ url_for('socios.balance_periodic') }}" class="row g-2 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-secondary mb-1">Fecha Desde:</label>
                     <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ fecha_desde }}" required>
@@ -195,7 +195,7 @@
                         <tr>
                             <td class="ps-3 fw-bold text-primary">#{{ sc.nro_socio }}</td>
                             <td class="fw-semibold">
-                                <a href="{{ url_for('ficha_socio', id=sc.socio_id) }}" class="text-decoration-none text-dark">
+                                <a href="{{ url_for('socios.ficha_socio',  id=sc.socio_id) }}" class="text-decoration-none text-dark">
                                     {{ sc.apellido }}, {{ sc.nombre }}
                                 </a>
                             </td>
@@ -260,7 +260,7 @@
                                 {{ m.fecha.strftime('%d/%m/%Y') if m.fecha and m.fecha.strftime else m.fecha }}
                             </td>
                             <td class="text-center">
-                                {% if m.tipo == 'Ingreso' %}
+                                {% if (m.tipo or '')|lower == 'ingreso' %}
                                     <span class="badge bg-success-subtle text-success border border-success-subtle">Ingreso</span>
                                 {% else %}
                                     <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Egreso</span>
@@ -269,10 +269,10 @@
                             <td class="fw-semibold">{{ m.concepto }}</td>
                             <td class="text-muted small">{{ m.comprobante or '-' }}</td>
                             <td class="text-end fw-bold text-success">
-                                {{ "${:,.2f}".format(m.monto) if m.tipo == 'Ingreso' else '-' }}
+                                {{ "${:,.2f}".format(m.monto) if (m.tipo or '')|lower == 'ingreso' else '-' }}
                             </td>
                             <td class="text-end pe-3 fw-bold text-danger">
-                                {{ "${:,.2f}".format(m.monto) if m.tipo == 'Egreso' else '-' }}
+                                {{ "${:,.2f}".format(m.monto) if (m.tipo or '')|lower == 'egreso' else '-' }}
                             </td>
                             <td class="text-secondary small">{{ m.observaciones or '-' }}</td>
                         </tr>

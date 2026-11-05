@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Cobradores - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+{% block title %}Usuarios y permisos - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
 
 {% block content %}
 <div class="py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold text-primary mb-0">👥 Cobradores</h4>
+        <h4 class="fw-bold text-primary mb-0">👥 Usuarios y permisos</h4>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoCobrador">
-            + Nuevo Cobrador
+            + Nuevo usuario
         </button>
+    </div>
+
+    <div class="alert alert-info" role="alert">
+        Creá cada acceso con un usuario y una clave. El socio vinculado solo es obligatorio para los cobradores.
     </div>
 
     <div class="card shadow-sm border-0">
@@ -20,7 +24,9 @@
                             <th>N°</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
-                            <th>Correo electrónico</th>
+                            <th>Acceso</th>
+                            <th>Socio vinculado</th>
+                            <th>Rol</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -31,10 +37,26 @@
                             <td>{{ c.id }}</td>
                             <td>{{ c.nombre }}</td>
                             <td>{{ c.apellido or '-' }}</td>
-                            <td>{{ c.email }}</td>
+                            <td>
+                                {% if c.username %}
+                                {{ c.username }}
+                                {% elif c.email %}
+                                {{ c.email }} <small class="text-muted">(correo)</small>
+                                {% else %}
+                                {{ c.username or 'Aún no registrado' }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if c.nro_socio %}N° {{ c.nro_socio }} · {% endif %}
+                                {{ c.apellido or '' }}{% if c.apellido and c.nombre %}, {% endif %}{{ c.nombre or 'Sin vincular' }}
+                            </td>
+                            <td>{{ {'superadmin': 'Superadministrador', 'admin': 'Administrador', 'cobrador': 'Cobrador'}.get(c.rol, c.rol) }}</td>
                             <td>
                                 {% if c.activo %}
                                     <span class="badge bg-success">Activo</span>
+                                    {% if c.rol == 'cobrador' and not c.username %}
+                                    <small class="text-muted d-block">Pendiente de registro</small>
+                                    {% endif %}
                                 {% else %}
                                     <span class="badge bg-secondary">Dado de baja</span>
                                 {% endif %}
@@ -57,7 +79,7 @@
                         {% endfor %}
                         {% if not cobradores %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">Todavía no hay cobradores registrados.</td>
+                            <td colspan="8" class="text-center text-muted py-4">Todavía no hay usuarios registrados.</td>
                         </tr>
                         {% endif %}
                     </tbody>
@@ -72,7 +94,7 @@
         <div class="modal-content">
             <form method="POST" action="{{ url_for('admin.cobradores') }}">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Alta de cobrador</h5>
+                    <h5 class="modal-title">Crear usuario de acceso</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
@@ -85,18 +107,47 @@
                         <input type="text" class="form-control" id="nuevoApellido" name="apellido">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold" for="nuevoEmail">Correo electrónico (*)</label>
-                        <input type="email" class="form-control" id="nuevoEmail" name="email" required>
+                        <label class="form-label fw-bold" for="nuevoRol">Rol (*)</label>
+                        <select class="form-select" id="nuevoRol" name="rol" data-role-select required>
+                            <option value="cobrador" selected>Cobrador</option>
+                            <option value="admin">Administrador</option>
+                            <option value="superadmin">Superadministrador</option>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold" for="nuevoPassword">Contraseña (*)</label>
+                        <label class="form-label fw-bold" for="nuevoUsuario">Usuario para ingresar (*)</label>
+                        <input type="text" class="form-control" id="nuevoUsuario" name="username"
+                               minlength="3" maxlength="40" autocomplete="username" required>
+                        <div class="form-text">De 3 a 40 caracteres, sin espacios.</div>
+                    </div>
+                    <div class="mb-3" data-socio-field>
+                        <label class="form-label fw-bold" for="nuevoSocio">Socio activo vinculado (*)</label>
+                        <select class="form-select" id="nuevoSocio" name="socio_id">
+                            <option value="" selected disabled>Seleccioná el socio cobrador</option>
+                            {% for socio in socios_activos %}
+                            <option value="{{ socio.id }}">
+                                {% if socio.nro_socio %}N° {{ socio.nro_socio }} · {% endif %}
+                                {{ socio.apellido }}, {{ socio.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Solo es necesario para un cobrador.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="nuevoEmail">Correo electrónico (opcional)</label>
+                        <input type="email" class="form-control" id="nuevoEmail" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="nuevoPassword">Clave (*)</label>
                         <div class="input-group">
-                            <input type="password" class="form-control" id="nuevoPassword" name="password" autocomplete="new-password" required>
+                            <input type="password" class="form-control" id="nuevoPassword" name="password"
+                                   minlength="8" autocomplete="new-password" required>
                             <button type="button" class="btn btn-outline-secondary" data-toggle-password="nuevoPassword"
                                     aria-label="Mostrar contraseña" title="Mostrar u ocultar contraseña">
                                 <i class="fas fa-eye" aria-hidden="true"></i>
                             </button>
                         </div>
+                        <div class="form-text">Al menos 8 caracteres. Luego se puede cambiar desde Modificar.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -114,7 +165,7 @@
         <div class="modal-content">
             <form method="POST" action="{{ url_for('admin.editar_cobrador', cid=c.id) }}">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Modificar cobrador</h5>
+                    <h5 class="modal-title">Modificar usuario</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
@@ -127,14 +178,39 @@
                         <input type="text" class="form-control" id="apellido{{ c.id }}" name="apellido" value="{{ c.apellido or '' }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold" for="email{{ c.id }}">Correo electrónico (*)</label>
-                        <input type="email" class="form-control" id="email{{ c.id }}" name="email" value="{{ c.email }}" required>
+                        <label class="form-label fw-bold" for="rol{{ c.id }}">Rol (*)</label>
+                        <select class="form-select" id="rol{{ c.id }}" name="rol" data-role-select required>
+                            <option value="cobrador" {% if c.rol == 'cobrador' %}selected{% endif %}>Cobrador</option>
+                            <option value="admin" {% if c.rol == 'admin' %}selected{% endif %}>Administrador</option>
+                            <option value="superadmin" {% if c.rol == 'superadmin' %}selected{% endif %}>Superadministrador</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="usuario{{ c.id }}">Usuario para ingresar</label>
+                        <input type="text" class="form-control" id="usuario{{ c.id }}" name="username"
+                               value="{{ c.username or '' }}" minlength="3" maxlength="40" autocomplete="username">
+                    </div>
+                    <div class="mb-3" data-socio-field>
+                        <label class="form-label fw-bold" for="socio{{ c.id }}">Socio activo vinculado (*)</label>
+                        <select class="form-select" id="socio{{ c.id }}" name="socio_id">
+                            <option value="" disabled {% if not c.socio_id %}selected{% endif %}>Seleccioná el socio cobrador</option>
+                            {% for socio in socios_activos %}
+                            <option value="{{ socio.id }}" {% if c.socio_id|string == socio.id|string %}selected{% endif %}>
+                                {% if socio.nro_socio %}N° {{ socio.nro_socio }} · {% endif %}
+                                {{ socio.apellido }}, {{ socio.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="email{{ c.id }}">Correo electrónico (opcional)</label>
+                        <input type="email" class="form-control" id="email{{ c.id }}" name="email" value="{{ c.email or '' }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold" for="password{{ c.id }}">Nueva contraseña</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="password{{ c.id }}" name="password"
-                                   autocomplete="new-password" placeholder="{% if c.activo %}Dejar en blanco para conservar la actual{% else %}Ingresar para reactivar al cobrador{% endif %}">
+                                   minlength="8" autocomplete="new-password" placeholder="{% if c.activo %}Dejar en blanco para conservar la actual{% else %}Ingresar una clave nueva para reactivar{% endif %}">
                             <button type="button" class="btn btn-outline-secondary" data-toggle-password="password{{ c.id }}"
                                     aria-label="Mostrar contraseña" title="Mostrar u ocultar contraseña">
                                 <i class="fas fa-eye" aria-hidden="true"></i>
@@ -155,15 +231,29 @@
 
 {% block extra_js %}
 <script>
-document.querySelectorAll("[data-toggle-password]").forEach(function (button) {
+document.querySelectorAll(".input-group > button").forEach(function (button) {
     button.addEventListener("click", function () {
-        const input = document.getElementById(button.dataset.togglePassword);
+        const input = button.parentElement.querySelector("input");
         const showing = input.type === "password";
         input.type = showing ? "text" : "password";
         button.setAttribute("aria-label", showing ? "Ocultar contraseña" : "Mostrar contraseña");
         button.querySelector("i").classList.toggle("fa-eye", !showing);
         button.querySelector("i").classList.toggle("fa-eye-slash", showing);
     });
+});
+
+document.querySelectorAll("[data-role-select]").forEach(function (select) {
+    function actualizarSocio() {
+        const grupo = select.closest(".modal-body").querySelector("[data-socio-field]");
+        const socio = grupo.querySelector("select");
+        const necesario = select.value === "cobrador";
+        grupo.hidden = !necesario;
+        socio.required = necesario;
+        socio.disabled = !necesario;
+    }
+
+    select.addEventListener("change", actualizarSocio);
+    actualizarSocio();
 });
 </script>
 {% endblock %}

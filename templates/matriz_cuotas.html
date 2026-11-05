@@ -50,13 +50,23 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+    .matriz-cuotas {
+        table-layout: fixed;
+        min-width: 900px;
+    }
+    .matriz-cuotas th,
+    .matriz-cuotas td {
+        padding-right: 0.15rem;
+        padding-left: 0.15rem;
+    }
     /* Estilo para celdas con enlace a ficha */
     .celda-mes-link {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 28px;
-        height: 28px;
+        width: 38px;
+        height: 34px;
+        box-sizing: border-box;
         border-radius: 6px;
         font-weight: 700;
         font-size: 0.95rem;
@@ -73,6 +83,11 @@
         background-color: #f8f9fa;
         color: #ced4da;
         border: 1px dashed #ced4da;
+    }
+    .mes-monto {
+        font-size: 0.46rem;
+        line-height: 1;
+        white-space: nowrap;
     }
     .celda-mes-link:hover {
         transform: scale(1.1);
@@ -111,6 +126,8 @@
                 <div class="mt-2">
                     <a href="{{ url_for('socios.matriz_cuotas',  anio=anio|int - 1) }}" class="btn btn-outline-secondary btn-sm">← Año Anterior</a>
                     <a href="{{ url_for('socios.matriz_cuotas',  anio=anio|int + 1) }}" class="btn btn-outline-secondary btn-sm">Año Siguiente →</a>
+                    <a href="{{ url_for('socios.descargar_matriz_cuotas_pdf', anio=anio, q=busqueda or None) }}"
+                       class="btn btn-danger btn-sm ms-1">📄 Descargar PDF</a>
                 </div>
             </div>
         </div>
@@ -120,21 +137,21 @@
         <div class="card card-amigable shadow-sm border-0">
             <div class="card-body p-4">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle w-100">
+                    <table class="table table-hover align-middle w-100 matriz-cuotas">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 70px;" class="text-center">Socio</th>
-                                <th>Apellido y Nombre</th>
-                                <th class="text-center" style="width: 50px;" title="Inscripción pagada">
+                                <th style="width: 58px;" class="text-center">Socio</th>
+                                <th style="width: 190px;">Apellido y Nombre</th>
+                                <th class="text-center" style="width: 48px;" title="Inscripción pagada">
                                     <span class="badge bg-warning text-dark" style="font-size: 0.75rem;">📄 Inscripción</span>
                                 </th>
                                 {% for nro in range(1, 13) %}
-                                <th class="text-center" style="width: 45px;">
+                                <th class="text-center" style="width: 40px;">
                                     <span class="mes-nombres">{{ nombres_meses[nro-1] }}</span><br>
                                     <span class="text-muted small">{{ nro }}</span>
                                 </th>
                                 {% endfor %}
-                                <th class="text-end" style="width: 110px;">Total</th>
+                                <th class="text-end" style="width: 90px;">Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -156,8 +173,10 @@
                                 {% for mes_pagado in socio.meses %}
                                 <td class="text-center">
                                     {% if mes_pagado %}
-                                        <a href="{{ url_for('socios.ficha_socio',  id=socio.id) }}" class="celda-mes-link pagado" title="Ver ficha de {{ socio.apellido }}, {{ socio.nombre }} - Mes {{ loop.index }} pagado">
-                                            ✓
+                                        <a href="{{ url_for('socios.ficha_socio',  id=socio.id) }}" class="celda-mes-link pagado d-inline-flex flex-column"
+                                           title="Pagado: ${{ '{:,.2f}'.format(socio.montos_por_mes[loop.index0]) }} - Ver ficha de {{ socio.apellido }}, {{ socio.nombre }}">
+                                            <span>✓</span>
+                                            <small class="mes-monto">${{ "{:,.2f}".format(socio.montos_por_mes[loop.index0]) }}</small>
                                         </a>
                                     {% else %}
                                         <a href="{{ url_for('socios.registrar_cuota', socio_id=socio.id, tipo_concepto='cuota_mensual', periodo=nombres_meses[loop.index0] ~ ' ' ~ anio, mes=loop.index, anio=anio, volver_matriz=1) }}" class="celda-mes-link pendiente" title="Cobrar cuota a {{ socio.apellido }}, {{ socio.nombre }} - Mes {{ loop.index }}">
@@ -166,7 +185,7 @@
                                     {% endif %}
                                 </td>
                                 {% endfor %}
-                                <td class="text-end fw-bold">${{ "{:,.2f}".format(socio.total_abonado or 0) }}</td>
+                                <td class="text-end fw-bold text-nowrap">${{ "{:,.2f}".format(socio.total_abonado or 0) }}</td>
                             </tr>
                             {% endfor %}
                             {% if not matriz %}

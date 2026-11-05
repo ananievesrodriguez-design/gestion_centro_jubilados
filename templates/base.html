@@ -9,13 +9,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-light">
+<body class="bg-light{% if request.endpoint == 'socios.portal_socios' %} portal-body{% endif %}">
 
     {% if request.endpoint != 'socios.portal_socios' %}
         {% include 'navbar.html' %}
     {% endif %}
 
-    <main class="container-fluid app-main px-3 px-lg-4 py-4">
+    <main class="container-fluid app-main px-3 px-lg-4 py-4{% if request.endpoint == 'socios.portal_socios' %} portal-main{% endif %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -30,7 +30,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer-institucional">
+    <footer class="footer-institucional{% if request.endpoint == 'socios.portal_socios' %} portal-footer{% endif %}">
         <div class="container">
             <p class="mb-1 fw-bold text-dark">{{ INSTITUCION.nombre or 'Centro de Jubilados' }}</p>
             <p class="mb-0 text-muted small">Sistema de Gestión y Servicios al Afiliado</p>

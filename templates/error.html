@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 720px;">
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center p-5">
+            <h1 class="h3 text-danger mb-3">{{ titulo }}</h1>
+            <p class="text-muted mb-4">{{ mensaje }}</p>
+            <a href="{{ url_for('socios.portal_socios') }}" class="btn btn-outline-secondary"
+               onclick="if (window.history.length > 1) { window.history.back(); return false; }">← Volver a la página anterior</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

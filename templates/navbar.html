@@ -1,6 +1,7 @@
 <nav class="navbar navbar-expand-xl navbar-dark navbar-gestion no-print">
     <div class="container-fluid px-3 px-lg-4">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('socios.listar_socios') }}">
+        <a class="navbar-brand d-flex align-items-center gap-2"
+           href="{{ url_for('socios.inicio_cobrador') if current_user and current_user.role == 'cobrador' else url_for('socios.listar_socios') }}">
             {% if INSTITUCION.logo %}
                 <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}"
                      alt="" class="navbar-logo">
@@ -11,7 +12,7 @@
             {% endif %}
             <span class="navbar-brand-copy">
                 <strong>{{ INSTITUCION.nombre or 'Centro de Jubilados' }}</strong>
-                <small>Administración</small>
+                <small>{{ 'Cobradores' if current_user and current_user.role == 'cobrador' else 'Administración' }}</small>
             </span>
         </a>
 
@@ -22,6 +23,14 @@
 
         <div class="collapse navbar-collapse" id="menuGestion">
             <ul class="navbar-nav me-auto my-2 my-xl-0">
+                {% if current_user and current_user.role == 'cobrador' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'socios.inicio_cobrador' %}active{% endif %}"
+                       href="{{ url_for('socios.inicio_cobrador') }}">
+                        <i class="fas fa-receipt me-1" aria-hidden="true"></i> Cobrar cuotas
+                    </a>
+                </li>
+                {% else %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'socios.listar_socios' %}active{% endif %}"
                        href="{{ url_for('socios.listar_socios') }}">
@@ -113,7 +122,7 @@
                         <li>
                             <a class="dropdown-item {% if request.endpoint == 'admin.cobradores_list' %}active{% endif %}"
                                href="{{ url_for('admin.cobradores_list') }}">
-                                <i class="fas fa-user-group me-2" aria-hidden="true"></i>Cobradores
+                                <i class="fas fa-user-group me-2" aria-hidden="true"></i>Usuarios y permisos
                             </a>
                         </li>
                         <li>
@@ -137,12 +146,15 @@
                         <i class="fas fa-arrow-up-right-from-square me-1" aria-hidden="true"></i>Portal
                     </a>
                 </li>
+                {% endif %}
             </ul>
 
             <div class="navbar-actions d-flex align-items-center gap-2 pb-3 pb-xl-0">
+                {% if not current_user or current_user.role != 'cobrador' %}
                 <a href="{{ url_for('socios.listar_socios') }}" class="btn btn-cobrar">
                     <i class="fas fa-circle-plus me-1" aria-hidden="true"></i> Cobrar cuota
                 </a>
+                {% endif %}
                 {% if is_authenticated %}
                 <div class="dropdown">
                     <button class="btn btn-user dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">

@@ -12,19 +12,19 @@
             <div class="card-body p-4">
                 <form method="POST" action="{{ url_for('auth.login') }}">
                     <div class="mb-3">
-                        <label for="email" class="form-label fw-bold">Correo Electrónico (*)</label>
-                        <input type="email" class="form-control" id="email" name="email" placeholder="correo@ejemplo.com" required>
+                        <label for="identifier" class="form-label fw-bold">Correo o nombre de usuario (*)</label>
+                        <input type="text" class="form-control" id="identifier" name="identifier" autocomplete="username" required>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label fw-bold">Contraseña (*)</label>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required>
+                        <input type="password" class="form-control" id="password" name="password" autocomplete="current-password" required>
                     </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary fw-bold">Ingresar</button>
                     </div>
                 </form>
                 <p class="text-center text-muted small mt-3 mb-0">
-                    Acceso restringido al personal autorizado del Centro de Jubilados.
+                    ¿Necesitás acceso? Pedile a una persona administradora que te cree un usuario y una clave.
                 </p>
             </div>
         </div>

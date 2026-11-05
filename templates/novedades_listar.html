@@ -21,6 +21,16 @@
             {% endif %}
         {% endwith %}
 
+        {% if whatsapp_configurado %}
+        <div class="alert alert-info" role="status">
+            WhatsApp está configurado. Los envíos van a los socios que dieron autorización y tienen un teléfono argentino con código internacional.
+        </div>
+        {% else %}
+        <div class="alert alert-warning" role="status">
+            Falta configurar WhatsApp y la plantilla aprobada para habilitar los envíos.
+        </div>
+        {% endif %}
+
         <!-- Formulario Nueva Novedad -->
         <div class="card card-amigable shadow-sm border-0 mb-4">
             <div class="card-header bg-primary text-white py-3">
@@ -105,6 +115,17 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
+                                    {% if n.whatsapp_pendientes or n.whatsapp_enviados or n.whatsapp_fallidos %}
+                                    <small class="d-block text-muted mb-1">
+                                        {{ n.whatsapp_enviados }} enviados · {{ n.whatsapp_pendientes }} pendientes{% if n.whatsapp_fallidos %} · {{ n.whatsapp_fallidos }} fallidos{% endif %}
+                                    </small>
+                                    {% endif %}
+                                    {% if n.activa and whatsapp_configurado %}
+                                    <form method="POST" action="{{ url_for('admin.enviar_novedad_whatsapp', id=n.id) }}"
+                                          class="d-inline" onsubmit="return confirm('¿Poner esta novedad en cola para los socios que autorizaron recibir WhatsApp?');">
+                                        <button type="submit" class="btn btn-sm btn-success">Enviar por WhatsApp</button>
+                                    </form>
+                                    {% endif %}
                                     <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar{{ n.id }}">
                                         ✏️ Editar
                                     </button>

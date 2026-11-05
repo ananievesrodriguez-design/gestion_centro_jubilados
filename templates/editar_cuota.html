@@ -11,18 +11,6 @@
             </div>
             <div class="card-body p-4">
 
-                <!-- Mensajes flash -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
                 <form method="POST" id="formEditarCuota">
                     <input type="hidden" name="cuota_id" value="{{ cuota.id }}">
 
@@ -68,12 +56,17 @@
 
                         <!-- Monto -->
                         <div class="col-md-6 mb-3">
-                            <label for="monto" class="form-label fw-bold">Monto ($) (*)</label>
+                            <label for="monto" class="form-label fw-bold">
+                                {{ 'Monto total del cobro ($) (*)' if cuota.cantidad_periodos else 'Monto ($) (*)' }}
+                            </label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
                                 <input type="number" step="0.01" class="form-control fw-bold fs-5 text-success" id="monto" name="monto" 
                                        value="{{ cuota.monto or 0 }}" required>
                             </div>
+                            {% if cuota.cantidad_periodos %}
+                                <div class="form-text">El total se volverá a distribuir entre los {{ cuota.cantidad_periodos }} meses del recibo.</div>
+                            {% endif %}
                         </div>
 
                         <!-- Método de Pago -->
@@ -117,7 +110,8 @@
 
                     <div class="d-flex gap-2 mt-4">
                         <button type="submit" class="btn btn-warning fw-bold px-4">💾 Guardar Cambios</button>
-                        <a href="{{ url_for('socios.ficha_socio',  id=cuota.socio_id) }}" class="btn btn-secondary px-4">Cancelar</a>
+                        <a href="{{ url_for('socios.ficha_socio', id=cuota.socio_id) }}" class="btn btn-secondary px-4"
+                           onclick="if (window.history.length > 1) { window.history.back(); return false; }">← Volver</a>
                     </div>
                 </form>
             </div>

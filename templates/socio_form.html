@@ -66,7 +66,17 @@
 
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Teléfono / Celular</label>
-                        <input type="text" class="form-control" name="telefono" value="{{ socio.telefono if socio else '' }}" placeholder="Ej: 383-4xxxxxx">
+                        <input type="text" class="form-control" name="telefono" value="{{ socio.telefono if socio else '' }}" placeholder="Ej: +54 9 ...">
+                        <div class="form-text">Para WhatsApp, ingresá el código internacional, por ejemplo +54 9...</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="whatsapp_autorizado"
+                                   name="whatsapp_autorizado">
+                            <label class="form-check-label" for="whatsapp_autorizado">
+                                Autoriza recibir por WhatsApp recordatorios de cumpleaños y novedades del Centro.
+                            </label>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Correo Electrónico</label>

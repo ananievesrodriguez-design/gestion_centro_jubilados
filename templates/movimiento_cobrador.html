@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar compra o subsidio - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0 fw-bold">Registrar compra o subsidio</h4>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted">
+                    El movimiento quedará asentado en caja. Esta pantalla no permite consultar ni editar otros movimientos.
+                </p>
+                <form method="POST" action="{{ url_for('socios.movimiento_cobrador') }}">
+                    <div class="mb-3">
+                        <label for="tipo_movimiento" class="form-label fw-bold">Tipo de movimiento (*)</label>
+                        <select class="form-select" id="tipo_movimiento" name="tipo_movimiento" required>
+                            <option value="" disabled {% if not datos.get('tipo_movimiento') %}selected{% endif %}>Seleccioná una opción</option>
+                            <option value="compra" {% if datos.get('tipo_movimiento') == 'compra' %}selected{% endif %}>Compra realizada</option>
+                            <option value="subsidio" {% if datos.get('tipo_movimiento') == 'subsidio' %}selected{% endif %}>Subsidio recibido</option>
+                        </select>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label for="fecha" class="form-label fw-bold">Fecha (*)</label>
+                            <input type="date" class="form-control" id="fecha" name="fecha"
+                                   value="{{ datos.get('fecha') or hoy }}" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="monto" class="form-label fw-bold">Monto ($) (*)</label>
+                            <input type="number" class="form-control" id="monto" name="monto"
+                                   min="0.01" step="0.01" value="{{ datos.get('monto', '') }}" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="metodo" class="form-label fw-bold">Medio (*)</label>
+                            <select class="form-select" id="metodo" name="metodo" required>
+                                {% for metodo in ['Efectivo', 'Transferencia', 'Débito / Cheque'] %}
+                                <option value="{{ metodo }}" {% if datos.get('metodo', 'Efectivo') == metodo %}selected{% endif %}>{{ metodo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="comprobante" class="form-label fw-bold">N° de comprobante</label>
+                            <input type="text" class="form-control" id="comprobante" name="comprobante"
+                                   value="{{ datos.get('comprobante', '') }}" maxlength="100">
+                        </div>
+                        <div class="col-12">
+                            <label for="concepto" class="form-label fw-bold">Detalle (*)</label>
+                            <input type="text" class="form-control" id="concepto" name="concepto"
+                                   value="{{ datos.get('concepto', '') }}" maxlength="300" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="observaciones" class="form-label fw-bold">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones"
+                                      rows="2">{{ datos.get('observaciones', '') }}</textarea>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary flex-fill py-2 fw-bold">Guardar movimiento</button>
+                        <a href="{{ url_for('socios.inicio_cobrador') }}"
+                           class="btn btn-outline-secondary flex-fill py-2">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

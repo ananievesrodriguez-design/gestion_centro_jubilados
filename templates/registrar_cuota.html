@@ -11,18 +11,6 @@
             </div>
             <div class="card-body p-4">
 
-                <!-- Mensajes flash -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
                 <form method="POST" id="formCobroCuota"
                       data-valor-mensual="{{ CONFIG.reglas_negocio.valor_cuota_mensual or CONFIG.reglas_negocio.valor_cuota_estandar or 200 }}"
                       data-valor-anual-promo="{{ CONFIG.reglas_negocio.valor_anual_promocional or CONFIG.reglas_negocio.valor_cuota_promocional or 1500 }}"
@@ -46,7 +34,7 @@
                     </div>
 
                     <div class="row">
-                        <!-- Cobrador -->
+                        {% if not es_cobrador %}
                         <div class="col-md-6 mb-3">
                             <label for="cobrador_id" class="form-label fw-bold">Cobrador / Responsable</label>
                             <select class="form-select" id="cobrador_id" name="cobrador_id">
@@ -56,23 +44,25 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        {% endif %}
 
                         <!-- Fecha de cobro -->
-                        <div class="col-md-6 mb-3">
+                        <div class="{% if es_cobrador %}col-md-12{% else %}col-md-6{% endif %} mb-3">
                             <label for="fecha_cobro" class="form-label fw-bold">Fecha de Cobro (*)</label>
                             <input type="date" class="form-control" id="fecha_cobro" name="fecha_cobro" value="{{ hoy }}" required>
                         </div>
                     </div>
 
                     <div class="row">
-                        <!-- Tipo de Concepto (Aplica las reglas de negocio) -->
                         <div class="col-md-6 mb-3">
                             <label for="tipo_concepto" class="form-label fw-bold">Concepto / Tipo de Cobro (*)</label>
                             <select class="form-select border-primary" id="tipo_concepto" name="tipo_concepto" required>
-                                <option value="cuota_anual" {% if tipo_concepto_inicial == 'cuota_anual' %}selected{% endif %}>Cuota Anual (Bonificada según fecha)</option>
+                                <option value="cuota_anual" {% if tipo_concepto_inicial == 'cuota_anual' %}selected{% endif %}>Cuota Anual (12 meses)</option>
+                                <option value="cuota_semestral" {% if tipo_concepto_inicial == 'cuota_semestral' %}selected{% endif %}>Cuota Semestral (6 meses)</option>
                                 <option value="inscripcion" {% if tipo_concepto_inicial == 'inscripcion' %}selected{% endif %}>Inscripción al Centro</option>
                                 <option value="cuota_mensual" {% if tipo_concepto_inicial == 'cuota_mensual' %}selected{% endif %}>Cuota Mensual Individual</option>
-                                <option value="otro">Otro Importe / Personalizado</option>
+                                <option value="cuota_personalizada" {% if tipo_concepto_inicial == 'cuota_personalizada' %}selected{% endif %}>Pago por otra cantidad de meses</option>
+                                <option value="otro" {% if tipo_concepto_inicial == 'otro' %}selected{% endif %}>Otro importe (sin asignar meses)</option>
                             </select>
                         </div>
 
@@ -84,20 +74,32 @@
                     </div>
 
                     <div class="row">
-                        <!-- Período -->
-                        <div class="col-md-6 mb-3">
-                            <label for="periodo" class="form-label fw-bold">Período (*)</label>
-                            <input type="text" class="form-control" id="periodo" name="periodo" value="{{ periodo_inicial or '' }}" required>
+                        <div class="col-md-6 mb-3" id="mes_inicio_wrapper">
+                            <label for="mes_inicio" class="form-label fw-bold">Primer mes que cubre</label>
+                            <input type="month" class="form-control" id="mes_inicio" name="mes_inicio"
+                                   value="{{ mes_inicio }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3" id="cantidad_meses_wrapper">
+                            <label for="cantidad_meses" class="form-label fw-bold">Cantidad de meses</label>
+                            <input type="number" class="form-control" id="cantidad_meses" name="cantidad_meses"
+                                   min="1" max="12" value="{{ cantidad_meses_inicial }}">
+                            <div class="form-text">Puede elegir entre 1 y 12 meses.</div>
+                        </div>
+                        <div class="col-md-6 mb-3 d-none" id="periodo_wrapper">
+                            <label for="periodo" class="form-label fw-bold">Descripción del período (*)</label>
+                            <input type="text" class="form-control" id="periodo" name="periodo"
+                                   value="{{ periodo_inicial or '' }}">
                         </div>
 
-                        <!-- Monto -->
                         <div class="col-md-6 mb-3">
-                            <label for="monto" class="form-label fw-bold">Monto ($) (*)</label>
+                            <label for="monto" class="form-label fw-bold">Monto total cobrado ($) (*)</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" step="0.01" class="form-control fw-bold fs-5 text-success" id="monto" name="monto" required>
+                                <input type="number" step="0.01" min="0.01" class="form-control fw-bold fs-5 text-success" id="monto" name="monto"
+                                       value="{{ monto_inicial }}" required>
                             </div>
-                            <div id="monto_ayuda" class="form-text text-muted">Monto calculado según regla institucional.</div>
+                            <div id="monto_ayuda" class="form-text text-muted">Ingrese el total abonado; si aplica un beneficio, ajuste aquí el importe.</div>
+                            <div id="prorrateo_ayuda" class="form-text fw-semibold text-primary"></div>
                         </div>
                     </div>
 
@@ -120,7 +122,16 @@
                     <input type="hidden" name="volver_matriz" value="1">
                     <input type="hidden" name="anio_matriz" value="{{ anio_matriz }}">
                     {% endif %}
-                    <button type="submit" class="btn btn-primary w-100 py-2 fs-5 mt-2 shadow-sm">Registrar Cobro y Asentar Caja</button>
+                    <div class="d-flex flex-column flex-sm-row gap-2 mt-2">
+                        <button type="submit" class="btn btn-primary flex-fill py-2 fs-5 shadow-sm">Registrar cobro</button>
+                        {% if es_cobrador %}
+                        <a href="{{ url_for('socios.inicio_cobrador') }}" class="btn btn-outline-secondary flex-fill py-2 fs-5">Cancelar</a>
+                        {% elif volver_matriz %}
+                        <a href="{{ url_for('socios.matriz_cuotas', anio=anio_matriz) }}" class="btn btn-outline-secondary flex-fill py-2 fs-5">Cancelar</a>
+                        {% else %}
+                        <a href="{{ url_for('socios.ficha_socio', id=socio_id) }}" class="btn btn-outline-secondary flex-fill py-2 fs-5">Cancelar</a>
+                        {% endif %}
+                    </div>
                 </form>
             </div>
         </div>

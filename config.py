@@ -9,6 +9,13 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
+WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+WHATSAPP_TEMPLATE_NAME = os.getenv("WHATSAPP_TEMPLATE_NAME")
+WHATSAPP_TEMPLATE_LANGUAGE = os.getenv("WHATSAPP_TEMPLATE_LANGUAGE", "es_AR")
+WHATSAPP_GRAPH_API_VERSION = os.getenv("WHATSAPP_GRAPH_API_VERSION", "v23.0")
+WHATSAPP_BIRTHDAY_TEMPLATE = os.getenv("WHATSAPP_BIRTHDAY_TEMPLATE")
+WHATSAPP_NEWS_TEMPLATE = os.getenv("WHATSAPP_NEWS_TEMPLATE")
 
 if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     raise ValueError("Faltan configurar SUPABASE_URL o SUPABASE_ANON_KEY en el archivo .env")
@@ -20,6 +27,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("Falta configurar SECRET_KEY en las variables de entorno.")
 DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("Falta configurar DATABASE_URL en las variables de entorno.")
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config_institucion.json")
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "img")
@@ -56,5 +65,5 @@ def inject_global_context():
         "INSTITUCION": config.get("institucion", {}),
         "CONFIG": config,
         "current_user": session.get("user", None),
-        "is_authenticated": bool(session.get("access_token")),
+        "is_authenticated": bool(session.get("user")),
     }

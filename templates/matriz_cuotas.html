@@ -141,7 +141,8 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 58px;" class="text-center">Socio</th>
-                                <th style="width: 190px;">Apellido y Nombre</th>
+                                <th style="width: 170px;">Apellido y Nombre</th>
+                                <th style="width: 120px;">Cobrador</th>
                                 <th class="text-center" style="width: 48px;" title="Inscripción pagada">
                                     <span class="badge bg-warning text-dark" style="font-size: 0.75rem;">📄 Inscripción</span>
                                 </th>
@@ -163,9 +164,20 @@
                                         {{ socio.apellido }}, {{ socio.nombre }}
                                     </a>
                                 </td>
+                                <td class="small text-muted">
+                                    {% if socio.cobradores %}
+                                        {{ socio.cobradores|join(', ') }}
+                                    {% else %}
+                                        Sin cobrador
+                                    {% endif %}
+                                </td>
                                 <td class="text-center">
                                     {% if socio.inscripcion %}
-                                        <span class="check-inscripcion">★</span>
+                                        <a href="{{ url_for('socios.editar_cuota', cuota_id=socio.inscripcion_cuota_id, volver_matriz=1, anio=anio, q=busqueda or None) }}"
+                                           class="check-inscripcion text-decoration-none"
+                                           title="Modificar inscripción pagada">
+                                            ★
+                                        </a>
                                     {% else %}
                                         <span class="text-muted">–</span>
                                     {% endif %}
@@ -173,8 +185,9 @@
                                 {% for mes_pagado in socio.meses %}
                                 <td class="text-center">
                                     {% if mes_pagado %}
-                                        <a href="{{ url_for('socios.ficha_socio',  id=socio.id) }}" class="celda-mes-link pagado d-inline-flex flex-column"
-                                           title="Pagado: ${{ '{:,.2f}'.format(socio.montos_por_mes[loop.index0]) }} - Ver ficha de {{ socio.apellido }}, {{ socio.nombre }}">
+                                        <a href="{{ url_for('socios.editar_cuota', cuota_id=socio.cuotas_por_mes[loop.index0], volver_matriz=1, anio=anio, q=busqueda or None) }}"
+                                           class="celda-mes-link pagado d-inline-flex flex-column"
+                                           title="Modificar pago: ${{ '{:,.2f}'.format(socio.montos_por_mes[loop.index0]) }} - {{ socio.apellido }}, {{ socio.nombre }}">
                                             <span>✓</span>
                                             <small class="mes-monto">${{ "{:,.2f}".format(socio.montos_por_mes[loop.index0]) }}</small>
                                         </a>
@@ -190,7 +203,7 @@
                             {% endfor %}
                             {% if not matriz %}
                             <tr>
-                                <td colspan="16" class="text-center text-muted py-4">No se encontraron socios para mostrar.</td>
+                                <td colspan="17" class="text-center text-muted py-4">No se encontraron socios para mostrar.</td>
                             </tr>
                             {% endif %}
                         </tbody>

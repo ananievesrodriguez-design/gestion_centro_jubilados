@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Rendición de cobros por cobrador{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h4 class="mb-1 text-primary fw-bold">Rendición de cobros por cobrador</h4>
+            <small class="text-muted">
+                Acumulado histórico de cobros pagados, agrupado por responsable y socio.
+                Los importes se suman desde las cuotas registradas, sin volver a contar los movimientos de caja.
+            </small>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+                <form method="get" action="{{ url_for('socios.resumen_cobrador_cuotas') }}"
+                      class="d-flex flex-wrap align-items-end gap-2">
+                    <div>
+                        <label for="filtroCobrador" class="form-label mb-1">Mostrar</label>
+                        <select id="filtroCobrador" name="cobrador_id" class="form-select">
+                            <option value="" {% if not cobrador_id %}selected{% endif %}>Todos los cobradores</option>
+                            <option value="sin_asignar" {% if cobrador_id == 'sin_asignar' %}selected{% endif %}>
+                                Sede Central (sin cobrador)
+                            </option>
+                            {% for cobrador in cobradores %}
+                                <option value="{{ cobrador.id }}"
+                                        {% if cobrador_id == cobrador.id|string %}selected{% endif %}>
+                                    {{ cobrador.nombre }} {{ cobrador.apellido or '' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="busquedaSocio" class="form-label mb-1">Buscar socio</label>
+                        <input id="busquedaSocio" name="socio" type="search" class="form-control"
+                               placeholder="Nombre o N° de socio" value="{{ busqueda_socio }}">
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">Ver rendición</button>
+                    {% if cobrador_id or busqueda_socio %}
+                        <a href="{{ url_for('socios.resumen_cobrador_cuotas') }}"
+                           class="btn btn-outline-secondary">Limpiar</a>
+                    {% endif %}
+                </form>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('socios.descargar_resumen_cobrador_csv', cobrador_id=cobrador_id or None, socio=busqueda_socio or None) }}"
+                       class="btn btn-outline-success">Descargar rendición CSV</a>
+                    {% if cobrador_id %}
+                        <a href="{{ url_for('socios.descargar_resumen_cobrador_pdf', cobrador_id=cobrador_id, socio=busqueda_socio or None) }}"
+                           class="btn btn-outline-danger">Descargar PDF</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if grupos %}
+                {% if not cobrador_id %}
+                    <div class="alert alert-primary d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <strong>Total general recaudado:</strong>
+                        <span class="fs-5 fw-bold">${{ "{:,.2f}".format(total_cobrado) }}</span>
+                    </div>
+                {% endif %}
+
+                {% for grupo in grupos %}
+                    <section class="border rounded mb-4">
+                        <div class="bg-light px-3 py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <h5 class="mb-0 fw-bold">
+                                {{ grupo.nombre }} {{ grupo.apellido or '' }}
+                            </h5>
+                            <span class="fs-5 fw-bold text-success">
+                                Total: ${{ "{:,.2f}".format(grupo.total_cobrado) }}
+                            </span>
+                        </div>
+                        {% if grupo.socios %}
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>N° socio</th>
+                                            <th>Socio</th>
+                                            <th>Observaciones</th>
+                                            <th class="text-end">Total</th>
+                                            <th>Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for socio in grupo.socios %}
+                                            <tr>
+                                                <td>{{ socio.nro_socio }}</td>
+                                                <td>
+                                                    <a class="fw-semibold text-decoration-none"
+                                                       href="{{ url_for('socios.ficha_socio', id=socio.socio_id) }}">
+                                                        {{ socio.apellido or '' }}, {{ socio.nombre or '' }}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    {{ socio.observaciones or '—' }}
+                                                </td>
+                                                <td class="text-end fw-bold text-success">
+                                                    ${{ "{:,.2f}".format(socio.total_cobrado) }}
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap"
+                                                            data-bs-toggle="modal" data-bs-target="#editarObservacionesModal"
+                                                            data-socio-id="{{ socio.socio_id }}"
+                                                            data-cobrador-id="{{ grupo.cobrador_id }}"
+                                                            data-socio="{{ busqueda_socio }}"
+                                                            data-observaciones="{{ socio.observaciones or '' }}"
+                                                            data-nombre-socio="{{ socio.apellido or '' }}, {{ socio.nombre or '' }}">
+                                                        Editar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted px-3 py-2 mb-0">No tiene cobros pagados registrados.</p>
+                        {% endif %}
+                    </section>
+                {% endfor %}
+                <div class="modal fade" id="editarObservacionesModal" tabindex="-1"
+                     aria-labelledby="editarObservacionesTitulo" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="post" action="{{ url_for('socios.editar_observaciones_rendicion') }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editarObservacionesTitulo">Editar observaciones</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-muted" id="editarObservacionesSocio"></p>
+                                    <input type="hidden" name="socio_id" id="editarObservacionesSocioId">
+                                    <input type="hidden" name="cobrador_id" id="editarObservacionesCobradorId">
+                                    <input type="hidden" name="socio" id="editarObservacionesBusqueda">
+                                    <label for="editarObservacionesTexto" class="form-label">Observaciones</label>
+                                    <textarea name="observaciones" id="editarObservacionesTexto"
+                                              class="form-control" rows="5" maxlength="2000"
+                                              aria-describedby="ayudaObservaciones"></textarea>
+                                    <div class="form-text" id="ayudaObservaciones">
+                                        Se aplicarán a todos los cobros pagados de este socio para el cobrador seleccionado.
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">Guardar observaciones</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% elif cobrador_id %}
+                <p class="text-muted mb-0">Este responsable no tiene cobros pagados registrados.</p>
+            {% else %}
+                <p class="text-muted mb-0">Todavía no hay cobros pagados para rendir.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const editarObservacionesModal = document.getElementById('editarObservacionesModal');
+    if (editarObservacionesModal) {
+        editarObservacionesModal.addEventListener('show.bs.modal', function (event) {
+            const boton = event.relatedTarget;
+            document.getElementById('editarObservacionesSocioId').value = boton.dataset.socioId;
+            document.getElementById('editarObservacionesCobradorId').value = boton.dataset.cobradorId;
+            document.getElementById('editarObservacionesBusqueda').value = boton.dataset.socio;
+            document.getElementById('editarObservacionesSocio').textContent = boton.dataset.nombreSocio;
+            document.getElementById('editarObservacionesTexto').value = boton.dataset.observaciones;
+        });
+    }
+</script>
+{% endblock %}

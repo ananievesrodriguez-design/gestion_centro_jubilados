@@ -39,7 +39,7 @@
                 </li>
 
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['socios.matriz_cuotas', 'socios.listar_cuotas', 'socios.editar_cuota'] %}active{% endif %}"
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['socios.matriz_cuotas', 'socios.editar_cuota', 'socios.resumen_cobrador_cuotas'] %}active{% endif %}"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-receipt me-1" aria-hidden="true"></i> Cuotas
                     </a>
@@ -51,9 +51,9 @@
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item {% if request.endpoint in ['socios.listar_cuotas', 'socios.editar_cuota'] %}active{% endif %}"
-                               href="{{ url_for('socios.listar_cuotas') }}">
-                                <i class="fas fa-clock-rotate-left me-2" aria-hidden="true"></i>Historial de cobros
+                            <a class="dropdown-item {% if request.endpoint == 'socios.resumen_cobrador_cuotas' %}active{% endif %}"
+                               href="{{ url_for('socios.resumen_cobrador_cuotas') }}">
+                                <i class="fas fa-chart-column me-2" aria-hidden="true"></i>Resumen por cobrador
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>

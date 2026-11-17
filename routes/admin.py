@@ -10,6 +10,9 @@ from config import (
     archivo_permitido, documento_permitido, WHATSAPP_NEWS_TEMPLATE,
 )
 from models import db
+from cuotas_config import (
+    guardar_valores_cuota, obtener_valores_cuota, parsear_valores_cuota,
+)
 from whatsapp_service import whatsapp_template_configured
 
 admin_bp = Blueprint("admin", __name__)
@@ -259,8 +262,19 @@ def configuracion():
     config.setdefault("autoridades", {})
     config.setdefault("reglas_negocio", {})
     config.setdefault("actividades", {})
+    valores_cuota = obtener_valores_cuota()
 
     if request.method == "POST":
+        try:
+            valores_cuota = parsear_valores_cuota(request.form)
+        except ValueError as error:
+            flash(str(error), "warning")
+            return render_template(
+                "configuracion.html",
+                cfg=config,
+                valores_cuota=obtener_valores_cuota(),
+            )
+
         if "logo" in request.files:
             archivo = request.files["logo"]
             if archivo and archivo.filename != "" and archivo_permitido(archivo.filename):
@@ -284,20 +298,26 @@ def configuracion():
 
         config["reglas_negocio"]["descripcion_general"] = request.form.get("descripcion_general", "").strip()
         config["reglas_negocio"]["politica_anticipada"] = request.form.get("politica_anticipada", "").strip()
-        config["reglas_negocio"]["valor_cuota_mensual"] = float(request.form.get("valor_cuota_mensual", 0) or 0)
-        config["reglas_negocio"]["valor_anual_promocional"] = float(request.form.get("valor_anual_promocional", 0) or 0)
-        config["reglas_negocio"]["valor_anual_estandar"] = float(request.form.get("valor_anual_estandar", 0) or 0)
-        config["reglas_negocio"]["valor_inscripcion"] = float(request.form.get("valor_inscripcion", 0) or 0)
 
         config["actividades"]["gimnasia"] = request.form.get("gimnasia", "").strip()
         config["actividades"]["bingo"] = request.form.get("bingo", "").strip()
         config["actividades"]["festejos"] = request.form.get("festejos", "").strip()
 
-        guardar_config(config)
+        try:
+            guardar_valores_cuota(valores_cuota)
+            guardar_config(config)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception("No se pudo guardar la configuración institucional")
+            flash("No se pudieron guardar los parámetros. Inténtelo nuevamente.", "danger")
+            return redirect(url_for("admin.configuracion"))
         flash("Parámetros actualizados correctamente.", "success")
         return redirect(url_for("admin.configuracion"))
 
-    return render_template("configuracion.html", cfg=config)
+    return render_template(
+        "configuracion.html", cfg=config, valores_cuota=valores_cuota
+    )
 
 
 @admin_bp.route("/novedades", methods=["GET"])

@@ -23,7 +23,7 @@ Completá `.env` con valores reales antes de iniciar la app. No subas ese archiv
 python app.py
 ```
 
-La aplicación prepara al iniciar algunas columnas e índices de `cobradores`, la autorización de WhatsApp en `socios`, la cola de mensajes y las tablas auxiliares del portal. El resto del esquema de socios, cuotas y caja debe existir previamente en PostgreSQL.
+La aplicación prepara al iniciar algunas columnas e índices de `cobradores`, la autorización de WhatsApp en `socios`, la cola de mensajes, las tablas auxiliares del portal y la configuración de cuotas. El resto del esquema de socios, cuotas y caja debe existir previamente en PostgreSQL.
 
 ## Variables de entorno
 
@@ -91,11 +91,14 @@ Los documentos y fotos se guardan hoy dentro de `static/`. El disco de un servic
 | `routes/admin.py` | Usuarios, configuración institucional, novedades y archivos del portal. |
 | `routes/socios.py` | Portal público, padrón, cuotas, recibos y caja. |
 | `models.py` | Inicializa SQLAlchemy y declara los modelos ORM disponibles. La mayoría de consultas usan SQL explícito porque el esquema es preexistente. |
+| `cuotas_config.py` | Inicializa y consulta los valores de cuotas compartidos en PostgreSQL. |
 | `config.py` | Variables de entorno, clientes Supabase, archivos y configuración institucional. |
 | `whatsapp_service.py` | Envío de plantillas aprobadas por WhatsApp Cloud API. |
 | `jobs/procesar_whatsapp.py` | Cola y envío periódico de cumpleaños y novedades. |
 | `templates/` | Vistas Jinja. |
 | `static/` | JavaScript, CSS, imágenes y archivos servidos por el sitio. |
+
+Los cobros de cuotas se escriben en PostgreSQL mediante `DATABASE_URL`, en las tablas `cobro_cuotas` y `movimientos_caja`; el cliente REST de Supabase no es el que persiste esos cobros. La matriz anual es la vista principal de pagos: permite consultar la ficha e historial de un socio y abrir un cobro pagado para editarlo. La rendición de cuotas reúne los pagos por cobrador y socio y permite descargar un CSV compatible con Excel. Los valores de cuotas configurados desde Administración se guardan en `configuracion_cuotas` de PostgreSQL, inicializados una sola vez a partir de la configuración local existente; los demás datos institucionales continúan en `config_institucion.json`.
 
 Los scripts `migrar_datos.py` y `cargar_movimientos.py` son importadores puntuales de CSV; no forman parte del arranque del sitio. Revisá sus datos de entrada y hacé un respaldo de la base antes de usarlos.
 

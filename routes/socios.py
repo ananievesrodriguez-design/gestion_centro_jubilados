@@ -1,6 +1,7 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, send_file, session, url_for, current_app
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+import csv
 import os
 import io
 import re
@@ -9,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from auth_manager import admin_required, login_required
 from models import db
+from cuotas_config import obtener_valores_cuota
 from config import (
     DOCUMENTOS_UPLOAD_FOLDER, FOTOS_PORTAL_UPLOAD_FOLDER, cargar_config,
 )
@@ -105,11 +107,15 @@ def _obtener_matriz_cuotas(anio, busqueda=""):
     socios = db.session.execute(text(socios_sql), params).mappings().all()
 
     cobros = db.session.execute(text("""
-        SELECT socio_id, mes, periodo, anio, fecha_cobro,
-               LOWER(COALESCE(tipo_concepto, 'cuota')) AS concepto, monto
-        FROM cobro_cuotas
-        WHERE (anio = :anio OR (anio IS NULL AND EXTRACT(YEAR FROM fecha_cobro) = :anio))
-          AND (LOWER(estado) = 'pagado' OR estado IS NULL);
+        SELECT c.id, c.socio_id, c.mes, c.periodo, c.anio, c.fecha_cobro,
+               LOWER(COALESCE(c.tipo_concepto, 'cuota')) AS concepto,
+               c.monto, c.cobrador_id, cob.nombre AS cobrador_nombre,
+               cob.apellido AS cobrador_apellido
+        FROM cobro_cuotas c
+        LEFT JOIN cobradores cob ON cob.id = c.cobrador_id
+        WHERE (c.anio = :anio OR (c.anio IS NULL AND EXTRACT(YEAR FROM c.fecha_cobro) = :anio))
+          AND (LOWER(c.estado) = 'pagado' OR c.estado IS NULL)
+        ORDER BY c.fecha_cobro, c.id;
     """), {"anio": anio}).mappings().all()
 
     pagos_por_socio = {}
@@ -124,7 +130,10 @@ def _obtener_matriz_cuotas(anio, busqueda=""):
 
         meses_cubiertos = set()
         montos_por_mes = [Decimal("0.00")] * 12
+        cuotas_por_mes = [None] * 12
         tiene_inscripcion = False
+        inscripcion_cuota_id = None
+        cobradores_del_socio = []
         total_abonado = 0.0
         for cobro in pagos_por_socio.get(socio["id"], []):
             monto_cobro = Decimal(str(cobro["monto"] or 0))
@@ -133,6 +142,13 @@ def _obtener_matriz_cuotas(anio, busqueda=""):
             periodo = str(cobro["periodo"] or "").strip().lower()
             if "inscrip" in concepto or "inscrip" in periodo:
                 tiene_inscripcion = True
+                inscripcion_cuota_id = cobro["id"]
+            nombre_cobrador = (
+                f"{cobro['cobrador_nombre'] or ''} {cobro['cobrador_apellido'] or ''}".strip()
+                or "Sede Central"
+            )
+            if nombre_cobrador not in cobradores_del_socio:
+                cobradores_del_socio.append(nombre_cobrador)
             periodos_cubiertos = sorted(_periodos_cubiertos(cobro))
             if not periodos_cubiertos:
                 continue
@@ -145,12 +161,16 @@ def _obtener_matriz_cuotas(anio, busqueda=""):
                 if anio_cubierto == anio:
                     meses_cubiertos.add(mes_cubierto)
                     montos_por_mes[mes_cubierto - 1] += importe
+                    cuotas_por_mes[mes_cubierto - 1] = cobro["id"]
 
         matriz.append({
             **socio,
             "inscripcion": tiene_inscripcion,
             "meses": [mes in meses_cubiertos for mes in range(1, 13)],
             "montos_por_mes": montos_por_mes,
+            "cuotas_por_mes": cuotas_por_mes,
+            "inscripcion_cuota_id": inscripcion_cuota_id,
+            "cobradores": cobradores_del_socio,
             "total_abonado": total_abonado,
         })
     return matriz, total_socios_activos
@@ -164,11 +184,11 @@ def _texto_pdf(texto):
 
 def _generar_pdf_matriz(matriz, anio):
     ancho_pagina, alto_pagina = 842, 595
-    anchos_columnas = [42, 142, 42] + [34] * 12 + [58]
+    anchos_columnas = [42, 120, 72, 42] + [34] * 12 + [58]
     ancho_tabla = sum(anchos_columnas)
     inicio_x = (ancho_pagina - ancho_tabla) / 2
     alto_fila = 18
-    encabezado = ["Socio", "Apellido y Nombre", "Inscrip."] + [
+    encabezado = ["Socio", "Apellido y Nombre", "Cobrador", "Inscrip."] + [
         nombre[:3] for nombre in NOMBRES_MESES
     ] + ["Total"]
     filas_por_pagina = 27
@@ -206,7 +226,8 @@ def _generar_pdf_matriz(matriz, anio):
                 comandos.append(f"{inicio_x:.2f} {y - alto_fila + 3} {ancho_tabla:.2f} {alto_fila} re f")
             valores = [
                 f"#{socio.get('nro_socio') or socio['id']}",
-                f"{socio.get('apellido') or ''}, {socio.get('nombre') or ''}"[:30],
+                f"{socio.get('apellido') or ''}, {socio.get('nombre') or ''}"[:24],
+                ", ".join(socio.get("cobradores", []))[:13] or "Sin cobrador",
                 "Si" if socio["inscripcion"] else "-",
                 *["X" if mes_pagado else "-" for mes_pagado in socio["meses"]],
                 f"${socio['total_abonado']:,.2f}",
@@ -223,6 +244,409 @@ def _generar_pdf_matriz(matriz, anio):
         comandos.append(
             f"BT /F1 7 Tf {inicio_x:.2f} 22 Td ".encode("ascii")
             + _texto_pdf(f"Página {numero_pagina} de {len(grupos)}") + b" Tj ET"
+        )
+        contenidos.append(b"\n".join(
+            item if isinstance(item, bytes) else item.encode("ascii")
+            for item in comandos
+        ))
+
+    objetos = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [" + b" ".join(
+            f"{4 + indice * 2} 0 R".encode("ascii") for indice in range(len(grupos))
+        ) + b"] /Count " + str(len(grupos)).encode("ascii") + b" >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    ]
+    for indice, contenido in enumerate(contenidos):
+        id_pagina = 4 + indice * 2
+        id_contenido = id_pagina + 1
+        objetos.extend([
+            (
+                f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {ancho_pagina} {alto_pagina}] "
+                f"/Resources << /Font << /F1 3 0 R >> >> /Contents {id_contenido} 0 R >>"
+            ).encode("ascii"),
+            b"<< /Length " + str(len(contenido)).encode("ascii")
+            + b" >>\nstream\n" + contenido + b"\nendstream",
+        ])
+
+    pdf = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+    offsets = [0]
+    for numero, objeto in enumerate(objetos, start=1):
+        offsets.append(len(pdf))
+        pdf.extend(f"{numero} 0 obj\n".encode("ascii"))
+        pdf.extend(objeto)
+        pdf.extend(b"\nendobj\n")
+    posicion_xref = len(pdf)
+    pdf.extend(f"xref\n0 {len(objetos) + 1}\n".encode("ascii"))
+    pdf.extend(b"0000000000 65535 f \n")
+    for offset in offsets[1:]:
+        pdf.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
+    pdf.extend(
+        f"trailer\n<< /Size {len(objetos) + 1} /Root 1 0 R >>\n"
+        f"startxref\n{posicion_xref}\n%%EOF\n".encode("ascii")
+    )
+    return bytes(pdf)
+
+
+def _obtener_historial_cuotas():
+    cobradores = db.session.execute(text("""
+        SELECT id, nombre, apellido
+        FROM cobradores
+        ORDER BY nombre, apellido;
+    """)).mappings().all()
+    cobrador_ids = {str(cobrador["id"]) for cobrador in cobradores}
+    cobrador_id = request.args.get("cobrador_id", "").strip()
+    if cobrador_id not in cobrador_ids and cobrador_id != "sin_asignar":
+        cobrador_id = ""
+
+    sql = """
+        SELECT c.id, c.nro_recibo, c.fecha_cobro, c.periodo, c.anio,
+               c.monto, c.metodo_pago, c.estado, c.observaciones,
+               s.nro_socio, s.apellido AS socio_apellido,
+               s.nombre AS socio_nombre, s.dni AS socio_dni,
+               cob.nombre AS cobrador_nombre, cob.apellido AS cobrador_apellido
+        FROM cobro_cuotas c
+        INNER JOIN socios s ON c.socio_id = s.id
+        LEFT JOIN cobradores cob ON c.cobrador_id = cob.id
+    """
+    params = {}
+    if cobrador_id == "sin_asignar":
+        sql += " WHERE c.cobrador_id IS NULL"
+    elif cobrador_id:
+        sql += " WHERE c.cobrador_id = :cobrador_id"
+        params["cobrador_id"] = int(cobrador_id)
+    sql += " ORDER BY c.fecha_cobro DESC, c.id DESC;"
+    cuotas = db.session.execute(text(sql), params).mappings().all()
+    cobrador_seleccionado = next(
+        (cobrador for cobrador in cobradores if str(cobrador["id"]) == cobrador_id),
+        None,
+    )
+    if cobrador_id == "sin_asignar":
+        cobrador_seleccionado = {"nombre": "Sede Central", "apellido": ""}
+    return cuotas, cobradores, cobrador_id, cobrador_seleccionado
+
+
+def _total_cobrado_historial(cuotas):
+    return sum(
+        (
+            Decimal(str(cuota["monto"] or 0))
+            for cuota in cuotas
+            if cuota["estado"] is None or str(cuota["estado"]).strip().lower() == "pagado"
+        ),
+        Decimal("0.00"),
+    )
+
+
+def _obtener_resumen_cobrador():
+    cobradores = db.session.execute(text("""
+        SELECT id, nombre, apellido
+        FROM cobradores
+        ORDER BY nombre, apellido;
+    """)).mappings().all()
+    cobrador_ids = {str(cobrador["id"]) for cobrador in cobradores}
+    cobrador_id = request.args.get("cobrador_id", "").strip()
+    busqueda_socio = request.args.get("socio", "").strip()[:100]
+    if cobrador_id not in cobrador_ids and cobrador_id != "sin_asignar":
+        cobrador_id = ""
+
+    cobrador_seleccionado = next(
+        (cobrador for cobrador in cobradores if str(cobrador["id"]) == cobrador_id),
+        None,
+    )
+    if cobrador_id == "sin_asignar":
+        cobrador_seleccionado = {"nombre": "Sede Central", "apellido": ""}
+
+    filtros = []
+    parametros = {}
+    if cobrador_id == "sin_asignar":
+        filtros.append("c.cobrador_id IS NULL")
+    elif cobrador_id:
+        filtros.append("c.cobrador_id = :cobrador_id")
+        parametros["cobrador_id"] = int(cobrador_id)
+    if busqueda_socio:
+        filtros.append("""
+            (
+                CAST(COALESCE(s.nro_socio, s.id) AS TEXT) ILIKE :busqueda_socio
+                OR s.apellido ILIKE :busqueda_socio
+                OR s.nombre ILIKE :busqueda_socio
+            )
+        """)
+        parametros["busqueda_socio"] = f"%{busqueda_socio}%"
+    filtros.append("(LOWER(c.estado) = 'pagado' OR c.estado IS NULL)")
+
+    filas = db.session.execute(text(f"""
+        SELECT c.cobrador_id, cob.nombre AS cobrador_nombre,
+               cob.apellido AS cobrador_apellido,
+               s.id AS socio_id, COALESCE(s.nro_socio, s.id) AS nro_socio,
+               s.apellido, s.nombre,
+               STRING_AGG(
+                   DISTINCT NULLIF(BTRIM(c.observaciones), ''),
+                   ' · '
+               ) AS observaciones,
+               COUNT(*) FILTER (
+                   WHERE COALESCE(c.tipo_concepto, 'cuota_mensual') IN (
+                       'cuota_mensual', 'cuota_semestral', 'cuota_anual',
+                       'cuota_personalizada'
+                   )
+               ) AS cantidad_cuotas,
+               SUM(CASE
+                   WHEN COALESCE(c.tipo_concepto, 'cuota_mensual') IN (
+                       'cuota_mensual', 'cuota_semestral', 'cuota_anual',
+                       'cuota_personalizada'
+                   ) THEN COALESCE(c.monto, 0) ELSE 0
+               END) AS monto_cuotas,
+               COUNT(*) FILTER (WHERE c.tipo_concepto = 'inscripcion')
+                   AS cantidad_inscripciones,
+               SUM(CASE WHEN c.tipo_concepto = 'inscripcion'
+                   THEN COALESCE(c.monto, 0) ELSE 0 END) AS monto_inscripciones,
+               COUNT(*) FILTER (WHERE c.tipo_concepto = 'otro') AS cantidad_otros,
+               SUM(CASE WHEN c.tipo_concepto = 'otro'
+                   THEN COALESCE(c.monto, 0) ELSE 0 END) AS monto_otros,
+               SUM(COALESCE(c.monto, 0)) AS total_cobrado
+        FROM cobro_cuotas c
+        INNER JOIN socios s ON s.id = c.socio_id
+        LEFT JOIN cobradores cob ON cob.id = c.cobrador_id
+        WHERE {" AND ".join(filtros)}
+        GROUP BY c.cobrador_id, cob.nombre, cob.apellido,
+                 s.id, s.nro_socio, s.apellido, s.nombre
+        ORDER BY cob.apellido NULLS FIRST, cob.nombre NULLS FIRST,
+                 s.apellido, s.nombre, s.id;
+    """), parametros).mappings().all()
+
+    grupos_por_cobrador = {}
+    for fila in filas:
+        clave = fila["cobrador_id"] if fila["cobrador_id"] is not None else "sin_asignar"
+        grupo = grupos_por_cobrador.setdefault(clave, {
+            "cobrador_id": clave,
+            "nombre": fila["cobrador_nombre"] or "Sede Central",
+            "apellido": fila["cobrador_apellido"] or "",
+            "socios": [],
+            "total_cobrado": Decimal("0.00"),
+        })
+        socio = dict(fila)
+        grupo["socios"].append(socio)
+        grupo["total_cobrado"] += Decimal(str(socio["total_cobrado"] or 0))
+
+    grupos = list(grupos_por_cobrador.values())
+    socios = grupos[0]["socios"] if cobrador_id and grupos else []
+    total_cobrado = sum(
+        (grupo["total_cobrado"] for grupo in grupos),
+        Decimal("0.00"),
+    )
+    return (
+        cobradores, cobrador_id, cobrador_seleccionado,
+        socios, total_cobrado, grupos,
+    )
+
+
+def _generar_pdf_resumen_cobrador(cobrador, socios, total_cobrado):
+    ancho_pagina, alto_pagina = 595, 842
+    nombre_cobrador = (
+        f"{cobrador['nombre']} {cobrador['apellido'] or ''}".strip()
+        if cobrador else "Sin seleccionar"
+    )
+    filas_por_pagina = 23
+    grupos = [
+        socios[inicio:inicio + filas_por_pagina]
+        for inicio in range(0, len(socios), filas_por_pagina)
+    ] or [[]]
+    contenidos = []
+
+    for numero_pagina, filas in enumerate(grupos, start=1):
+        comandos = [
+            "0 0 0 rg",
+            f"BT /F1 16 Tf 48 {alto_pagina - 48} Td ".encode("ascii")
+            + _texto_pdf("Resumen de cobros por cobrador") + b" Tj ET",
+            f"BT /F1 11 Tf 48 {alto_pagina - 70} Td ".encode("ascii")
+            + _texto_pdf(f"Cobrador: {nombre_cobrador}") + b" Tj ET",
+            f"BT /F1 11 Tf 48 {alto_pagina - 88} Td ".encode("ascii")
+            + _texto_pdf(f"Total cobrado: ${total_cobrado:,.2f}") + b" Tj ET",
+        ]
+        y = alto_pagina - 112
+        comandos.extend([
+            "0.12 0.25 0.42 rg",
+            f"48 {y - 18} 499 20 re f",
+            "1 1 1 rg",
+            f"BT /F1 9 Tf 54 {y - 11} Td ".encode("ascii")
+            + _texto_pdf("Nro. socio") + b" Tj ET",
+            f"BT /F1 9 Tf 135 {y - 11} Td ".encode("ascii")
+            + _texto_pdf("Socio / detalle") + b" Tj ET",
+            f"BT /F1 9 Tf 465 {y - 11} Td ".encode("ascii")
+            + _texto_pdf("Total") + b" Tj ET",
+        ])
+        y -= 20
+
+        for indice, socio in enumerate(filas):
+            if indice % 2:
+                comandos.extend([
+                    "0.94 0.96 0.98 rg",
+                    f"48 {y - 24} 499 27 re f",
+                ])
+            comandos.append("0 0 0 rg")
+            comandos.append(
+                f"BT /F1 9 Tf 54 {y - 10} Td ".encode("ascii")
+                + _texto_pdf(socio["nro_socio"] or socio["socio_id"]) + b" Tj ET"
+            )
+            nombre_socio = f"{socio['apellido'] or ''}, {socio['nombre'] or ''}".strip(", ")
+            comandos.append(
+                f"BT /F1 9 Tf 125 {y - 10} Td ".encode("ascii")
+                + _texto_pdf(nombre_socio[:40]) + b" Tj ET"
+            )
+            conceptos = []
+            if socio["cantidad_cuotas"]:
+                conceptos.append(
+                    f"{socio['cantidad_cuotas']} cuota(s) "
+                    f"${Decimal(str(socio['monto_cuotas'] or 0)):,.2f}"
+                )
+            if socio["cantidad_inscripciones"]:
+                conceptos.append(
+                    f"{socio['cantidad_inscripciones']} inscrip. "
+                    f"${Decimal(str(socio['monto_inscripciones'] or 0)):,.2f}"
+                )
+            if socio["cantidad_otros"]:
+                conceptos.append(
+                    f"{socio['cantidad_otros']} otro(s) "
+                    f"${Decimal(str(socio['monto_otros'] or 0)):,.2f}"
+                )
+            comandos.append(
+                f"BT /F1 7 Tf 125 {y - 20} Td ".encode("ascii")
+                + _texto_pdf("; ".join(conceptos)[:75]) + b" Tj ET"
+            )
+            comandos.append(
+                f"BT /F1 9 Tf 465 {y - 10} Td ".encode("ascii")
+                + _texto_pdf(f"${Decimal(str(socio['total_cobrado'] or 0)):,.2f}") + b" Tj ET"
+            )
+            y -= 27
+
+        comandos.append(
+            f"BT /F1 8 Tf 48 28 Td ".encode("ascii")
+            + _texto_pdf(f"Pagina {numero_pagina} de {len(grupos)}") + b" Tj ET"
+        )
+        contenidos.append(b"\n".join(
+            item if isinstance(item, bytes) else item.encode("ascii")
+            for item in comandos
+        ))
+
+    objetos = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [" + b" ".join(
+            f"{4 + indice * 2} 0 R".encode("ascii") for indice in range(len(grupos))
+        ) + b"] /Count " + str(len(grupos)).encode("ascii") + b" >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    ]
+    for indice, contenido in enumerate(contenidos):
+        id_pagina = 4 + indice * 2
+        objetos.extend([
+            (
+                f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {ancho_pagina} {alto_pagina}] "
+                f"/Resources << /Font << /F1 3 0 R >> >> /Contents {id_pagina + 1} 0 R >>"
+            ).encode("ascii"),
+            b"<< /Length " + str(len(contenido)).encode("ascii")
+            + b" >>\nstream\n" + contenido + b"\nendstream",
+        ])
+
+    pdf = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+    offsets = [0]
+    for numero, objeto in enumerate(objetos, start=1):
+        offsets.append(len(pdf))
+        pdf.extend(f"{numero} 0 obj\n".encode("ascii"))
+        pdf.extend(objeto + b"\nendobj\n")
+    posicion_xref = len(pdf)
+    pdf.extend(f"xref\n0 {len(objetos) + 1}\n".encode("ascii"))
+    pdf.extend(b"0000000000 65535 f \n")
+    for offset in offsets[1:]:
+        pdf.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
+    pdf.extend(
+        f"trailer\n<< /Size {len(objetos) + 1} /Root 1 0 R >>\n"
+        f"startxref\n{posicion_xref}\n%%EOF\n".encode("ascii")
+    )
+    return bytes(pdf)
+
+
+def _generar_pdf_historial_cuotas(cuotas, cobrador_seleccionado):
+    ancho_pagina, alto_pagina = 842, 595
+    anchos_columnas = [52, 45, 105, 50, 72, 50, 58, 75, 48, 180]
+    ancho_tabla = sum(anchos_columnas)
+    inicio_x = (ancho_pagina - ancho_tabla) / 2
+    alto_fila = 18
+    encabezado = [
+        "Fecha", "Recibo", "Socio", "DNI", "Periodo",
+        "Monto", "Medio", "Cobrador", "Estado", "Observaciones",
+    ]
+    filas_por_pagina = 27
+    grupos = [
+        cuotas[inicio:inicio + filas_por_pagina]
+        for inicio in range(0, len(cuotas), filas_por_pagina)
+    ] or [[]]
+    nombre_filtro = (
+        f"{cobrador_seleccionado['nombre']} {cobrador_seleccionado['apellido'] or ''}".strip()
+        if cobrador_seleccionado else "Todos"
+    )
+    total_cobrado = _total_cobrado_historial(cuotas)
+
+    contenidos = []
+    for numero_pagina, filas in enumerate(grupos, start=1):
+        comandos = [
+            "0 0 0 rg",
+            f"BT /F1 14 Tf {inicio_x:.2f} {alto_pagina - 30} Td ".encode("ascii")
+            + _texto_pdf("Historial de Cobros y Cuotas") + b" Tj ET",
+            f"BT /F1 8 Tf {inicio_x:.2f} {alto_pagina - 43} Td ".encode("ascii")
+            + _texto_pdf(
+                f"Cobrador: {nombre_filtro} | Registros: {len(cuotas)} "
+                f"| Total cobrado: ${total_cobrado:,.2f}"
+            ) + b" Tj ET",
+        ]
+        y = alto_pagina - 54
+        x = inicio_x
+        comandos.append("0.12 0.25 0.42 rg")
+        for ancho, texto in zip(anchos_columnas, encabezado):
+            comandos.append(f"{x:.2f} {y - alto_fila + 3} {ancho:.2f} {alto_fila} re f")
+            comandos.append(
+                f"BT /F1 7 Tf 1 1 1 rg {x + 3:.2f} {y - 11:.2f} Td ".encode("ascii")
+                + _texto_pdf(texto) + b" Tj ET"
+            )
+            x += ancho
+        y -= alto_fila
+
+        for indice, cuota in enumerate(filas):
+            fecha_cobro = cuota["fecha_cobro"]
+            fecha_texto = fecha_cobro.strftime("%d/%m/%Y") if fecha_cobro else "-"
+            socio = f"{cuota['socio_apellido'] or ''}, {cuota['socio_nombre'] or ''}".strip(", ")
+            cobrador = (
+                f"{cuota['cobrador_nombre'] or ''} {cuota['cobrador_apellido'] or ''}".strip()
+                or "Sede Central"
+            )
+            valores = [
+                fecha_texto,
+                str(cuota["nro_recibo"] or "S/N"),
+                socio,
+                str(cuota["socio_dni"] or "-"),
+                str(cuota["periodo"] or "-"),
+                f"${Decimal(str(cuota['monto'] or 0)):,.2f}",
+                str(cuota["metodo_pago"] or "Efectivo"),
+                cobrador,
+                str(cuota["estado"] or "-"),
+                str(cuota["observaciones"] or "-"),
+            ]
+            x = inicio_x
+            if indice % 2:
+                comandos.extend([
+                    "0.94 0.96 0.98 rg",
+                    f"{inicio_x:.2f} {y - alto_fila + 3} {ancho_tabla:.2f} {alto_fila} re f",
+                ])
+            comandos.append("0 0 0 rg")
+            for ancho, valor in zip(anchos_columnas, valores):
+                max_caracteres = max(4, int((ancho - 6) / 3.8))
+                comandos.append(
+                    f"BT /F1 6 Tf {x + 3:.2f} {y - 11:.2f} Td ".encode("ascii")
+                    + _texto_pdf(valor[:max_caracteres]) + b" Tj ET"
+                )
+                x += ancho
+            y -= alto_fila
+
+        comandos.append(
+            f"BT /F1 7 Tf {inicio_x:.2f} 22 Td ".encode("ascii")
+            + _texto_pdf(f"Pagina {numero_pagina} de {len(grupos)}") + b" Tj ET"
         )
         contenidos.append(b"\n".join(
             item if isinstance(item, bytes) else item.encode("ascii")
@@ -711,9 +1135,7 @@ def editar_socio(id):
 @socios_bp.route("/socios/morosidad")
 @admin_required
 def control_morosidad():
-    config = cargar_config()
-    reglas = config.get("reglas_negocio", {})
-    valor_cuota = float(reglas.get("valor_cuota_mensual", 200.0) or 200.0)
+    valor_cuota = float(obtener_valores_cuota()["valor_cuota_mensual"])
 
     hoy = date.today()
     mes_actual = hoy.month
@@ -815,18 +1237,197 @@ def imprimir_padron():
 @socios_bp.route("/cuotas")
 @admin_required
 def listar_cuotas():
-    sql = text("""
-        SELECT c.id, c.nro_recibo, c.fecha_cobro, c.periodo, c.anio, c.monto, c.metodo_pago, c.estado, c.observaciones,
-               s.nro_socio, s.apellido AS socio_apellido, s.nombre AS socio_nombre, s.dni AS socio_dni,
-               cob.nombre AS cobrador_nombre, cob.apellido AS cobrador_apellido
-        FROM cobro_cuotas c
-        INNER JOIN socios s ON c.socio_id = s.id
-        LEFT JOIN cobradores cob ON c.cobrador_id = cob.id
-        ORDER BY c.fecha_cobro DESC, c.id DESC;
-    """)
-    resultados = db.session.execute(sql).fetchall()
-    return render_template("listar_cuotas.html", cuotas=resultados)
+    return redirect(url_for("socios.matriz_cuotas"))
 
+
+@socios_bp.route("/cuotas/resumen-cobrador")
+@admin_required
+def resumen_cobrador_cuotas():
+    (
+        cobradores, cobrador_id, cobrador_seleccionado,
+        socios, total_cobrado, grupos,
+    ) = (
+        _obtener_resumen_cobrador()
+    )
+    return render_template(
+        "resumen_cobrador_cuotas.html",
+        cobradores=cobradores,
+        cobrador_id=cobrador_id,
+        cobrador_seleccionado=cobrador_seleccionado,
+        socios=socios,
+        total_cobrado=total_cobrado,
+        grupos=grupos,
+        busqueda_socio=request.args.get("socio", "").strip()[:100],
+    )
+
+
+@socios_bp.route("/cuotas/resumen-cobrador/observaciones", methods=["POST"])
+@admin_required
+def editar_observaciones_rendicion():
+    socio_id_raw = request.form.get("socio_id", "").strip()
+    cobrador_id = request.form.get("cobrador_id", "").strip()
+    busqueda_socio = request.form.get("socio", "").strip()[:100]
+    observaciones = request.form.get("observaciones", "").strip()
+    if len(observaciones) > 2000:
+        flash("Las observaciones no pueden superar los 2000 caracteres.", "warning")
+        return redirect(url_for(
+            "socios.resumen_cobrador_cuotas",
+            cobrador_id=cobrador_id or None,
+            socio=busqueda_socio or None,
+        ))
+
+    try:
+        socio_id = int(socio_id_raw)
+        if socio_id <= 0:
+            raise ValueError
+    except ValueError:
+        flash("El socio seleccionado no es válido.", "warning")
+        return redirect(url_for(
+            "socios.resumen_cobrador_cuotas",
+            cobrador_id=cobrador_id or None,
+            socio=busqueda_socio or None,
+        ))
+
+    if cobrador_id == "sin_asignar":
+        condicion_cobrador = "cobrador_id IS NULL"
+        parametros = {"socio_id": socio_id}
+    else:
+        try:
+            cobrador_id = int(cobrador_id)
+            if cobrador_id <= 0:
+                raise ValueError
+        except ValueError:
+            flash("El cobrador seleccionado no es válido.", "warning")
+            return redirect(url_for(
+                "socios.resumen_cobrador_cuotas",
+                socio=busqueda_socio or None,
+            ))
+        condicion_cobrador = "cobrador_id = :cobrador_id"
+        parametros = {"socio_id": socio_id, "cobrador_id": cobrador_id}
+
+    parametros["observaciones"] = observaciones or None
+    condicion_pagado = "(LOWER(estado) = 'pagado' OR estado IS NULL)"
+    try:
+        result = db.session.execute(text(f"""
+            UPDATE cobro_cuotas
+            SET observaciones = :observaciones
+            WHERE socio_id = :socio_id
+              AND {condicion_cobrador}
+              AND {condicion_pagado};
+        """), parametros)
+        if not result.rowcount:
+            db.session.rollback()
+            flash("No se encontraron cobros pagados para actualizar.", "warning")
+            return redirect(url_for(
+                "socios.resumen_cobrador_cuotas",
+                cobrador_id=(
+                    "sin_asignar" if cobrador_id == "sin_asignar"
+                    else str(cobrador_id)
+                ),
+                socio=busqueda_socio or None,
+            ))
+
+        db.session.execute(text(f"""
+            UPDATE movimientos_caja
+            SET observaciones = :observaciones
+            WHERE cuota_id IN (
+                SELECT id
+                FROM cobro_cuotas
+                WHERE socio_id = :socio_id
+                  AND {condicion_cobrador}
+                  AND {condicion_pagado}
+            );
+        """), parametros)
+        db.session.commit()
+        flash("Observaciones actualizadas para los cobros pagados del socio.", "success")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "No se pudieron actualizar las observaciones del socio %s", socio_id
+        )
+        flash("No se pudieron guardar las observaciones. Inténtelo nuevamente.", "danger")
+
+    return redirect(url_for(
+        "socios.resumen_cobrador_cuotas",
+        cobrador_id=(
+            "sin_asignar" if cobrador_id == "sin_asignar"
+            else str(cobrador_id)
+        ),
+        socio=busqueda_socio or None,
+    ))
+
+
+@socios_bp.route("/cuotas/resumen-cobrador/descargar-pdf")
+@admin_required
+def descargar_resumen_cobrador_pdf():
+    (
+        _, cobrador_id, cobrador_seleccionado,
+        socios, total_cobrado, _,
+    ) = (
+        _obtener_resumen_cobrador()
+    )
+    if not cobrador_id:
+        flash("Seleccione un cobrador para descargar el resumen.", "warning")
+        return redirect(url_for("socios.resumen_cobrador_cuotas"))
+
+    archivo = io.BytesIO(
+        _generar_pdf_resumen_cobrador(cobrador_seleccionado, socios, total_cobrado)
+    )
+    sufijo = "sede_central" if cobrador_id == "sin_asignar" else f"cobrador_{cobrador_id}"
+    return send_file(
+        archivo,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"resumen_cobros_{sufijo}.pdf",
+    )
+
+
+@socios_bp.route("/cuotas/resumen-cobrador/descargar-csv")
+@admin_required
+def descargar_resumen_cobrador_csv():
+    _, cobrador_id, _, _, _, grupos = _obtener_resumen_cobrador()
+    salida = io.StringIO(newline="")
+    escritor = csv.writer(salida)
+    escritor.writerow([
+        "Cobrador", "N° socio", "Apellido", "Nombre",
+        "Cantidad de cuotas", "Monto cuotas",
+        "Cantidad de inscripciones", "Monto inscripciones",
+        "Cantidad de otros cobros", "Monto otros cobros", "Total cobrado",
+        "Observaciones",
+    ])
+    for grupo in grupos:
+        nombre_cobrador = f"{grupo['nombre']} {grupo['apellido']}".strip()
+        escritor.writerow([
+            nombre_cobrador, "TOTAL DEL COBRADOR", "", "", "", "",
+            "", "", "", "", grupo["total_cobrado"], "",
+        ])
+        for socio in grupo["socios"]:
+            escritor.writerow([
+                nombre_cobrador,
+                socio["nro_socio"],
+                socio["apellido"] or "",
+                socio["nombre"] or "",
+                socio["cantidad_cuotas"],
+                socio["monto_cuotas"] or 0,
+                socio["cantidad_inscripciones"],
+                socio["monto_inscripciones"] or 0,
+                socio["cantidad_otros"],
+                socio["monto_otros"] or 0,
+                socio["total_cobrado"] or 0,
+                socio["observaciones"] or "",
+            ])
+
+    archivo = io.BytesIO(("\ufeff" + salida.getvalue()).encode("utf-8"))
+    sufijo = (
+        "_sede_central" if cobrador_id == "sin_asignar"
+        else f"_cobrador_{cobrador_id}" if cobrador_id else "_todos"
+    )
+    return send_file(
+        archivo,
+        mimetype="text/csv; charset=utf-8",
+        as_attachment=True,
+        download_name=f"rendicion_cobros{sufijo}.csv",
+    )
 
 
 @socios_bp.route("/matriz-cuotas")
@@ -1188,16 +1789,26 @@ def registrar_cuota(socio_id):
         volver_matriz=request.args.get("volver_matriz") == "1",
         anio_matriz=request.args.get("anio", mes_inicio[:4]),
         es_cobrador=es_cobrador,
+        valores_cuota=obtener_valores_cuota(),
     )
 
 
 @socios_bp.route("/imprimir-recibo/<int:cuota_id>")
 @login_required
 def imprimir_recibo(cuota_id):
-    cuota = db.session.execute(text("SELECT * FROM cobro_cuotas WHERE id = :id;"), {"id": cuota_id}).mappings().first()
+    cuota = db.session.execute(text("""
+        SELECT c.*, c.id AS cuota_id,
+               s.nro_socio, s.apellido, s.nombre, s.dni,
+               cob.nombre AS nombre_cobrador,
+               cob.apellido AS apellido_cobrador
+        FROM cobro_cuotas c
+        INNER JOIN socios s ON s.id = c.socio_id
+        LEFT JOIN cobradores cob ON cob.id = c.cobrador_id
+        WHERE c.id = :id;
+    """), {"id": cuota_id}).mappings().first()
     if not cuota:
         flash("Recibo no encontrado.", "warning")
-        destino = "socios.inicio_cobrador" if session.get("user", {}).get("role") == "cobrador" else "socios.listar_cuotas"
+        destino = "socios.inicio_cobrador" if session.get("user", {}).get("role") == "cobrador" else "socios.matriz_cuotas"
         return redirect(url_for(destino))
     if (
         session.get("user", {}).get("role") == "cobrador"
@@ -1212,7 +1823,7 @@ def imprimir_recibo(cuota_id):
             Decimal("0.00"),
         )
         cuota["periodo"] = " / ".join(item["periodo"] or "Cuota" for item in cuotas_del_cobro)
-    return render_template("recibo_imprimir.html", cuota=cuota)
+    return render_template("recibo_imprimir.html", c=cuota)
 
 
 @socios_bp.route("/cuotas/editar/<int:cuota_id>", methods=["GET", "POST"])
@@ -1224,7 +1835,7 @@ def editar_cuota(cuota_id):
     ).mappings().first()
     if not cuota_resultado:
         flash("La cuota que desea editar no fue encontrada.", "warning")
-        return redirect(url_for("socios.listar_cuotas"))
+        return redirect(url_for("socios.matriz_cuotas"))
     cuotas_del_cobro = _cuotas_del_mismo_cobro(cuota_resultado)
     cuota = dict(cuota_resultado)
     if len(cuotas_del_cobro) > 1:
@@ -1234,6 +1845,13 @@ def editar_cuota(cuota_id):
         )
         cuota["periodo"] = " / ".join(item["periodo"] or "Cuota" for item in cuotas_del_cobro)
         cuota["cantidad_periodos"] = len(cuotas_del_cobro)
+
+    volver_matriz = (
+        request.args.get("volver_matriz") == "1"
+        or request.form.get("volver_matriz") == "1"
+    )
+    anio_matriz = request.form.get("anio_matriz") or request.args.get("anio", "")
+    busqueda_matriz = request.form.get("busqueda_matriz") or request.args.get("q", "")
 
     if request.method == "POST":
         try:
@@ -1248,6 +1866,30 @@ def editar_cuota(cuota_id):
             estado = request.form.get("estado", "PAGADO").upper()
             if estado not in {"PAGADO", "PENDIENTE", "ANULADO"}:
                 raise ValueError("Seleccione un estado válido para la cuota.")
+            fecha_cobro = datetime.strptime(
+                request.form.get("fecha_cobro", ""), "%Y-%m-%d"
+            ).date()
+            nro_recibo = request.form.get("nro_recibo", "").strip() or None
+            observaciones = request.form.get("observaciones", "").strip()
+            cobrador_id_raw = request.form.get("cobrador_id", "").strip()
+            cobrador_id = None
+            cobrador = None
+            if cobrador_id_raw:
+                try:
+                    cobrador_id = int(cobrador_id_raw)
+                except ValueError:
+                    raise ValueError("Seleccione un cobrador válido.")
+                cobrador = db.session.execute(text("""
+                    SELECT id, nombre, apellido
+                    FROM cobradores
+                    WHERE id = :id;
+                """), {"id": cobrador_id}).mappings().first()
+                if not cobrador:
+                    raise ValueError("El cobrador seleccionado no existe.")
+            nombre_cobrador = (
+                f"{cobrador['nombre']} {cobrador['apellido'] or ''}".strip()
+                if cobrador else "Sede Central"
+            )
 
             cantidad = len(cuotas_del_cobro)
             importe = (monto_total / cantidad).quantize(
@@ -1258,26 +1900,48 @@ def editar_cuota(cuota_id):
             for item, importe_periodo in zip(cuotas_del_cobro, importes):
                 db.session.execute(text("""
                     UPDATE cobro_cuotas
-                    SET monto = :monto, estado = :estado, metodo_pago = :metodo_pago
+                    SET nro_recibo = :nro_recibo, fecha_cobro = :fecha_cobro,
+                        monto = :monto, estado = :estado, metodo_pago = :metodo_pago,
+                        cobrador_id = :cobrador_id, observaciones = :observaciones
                     WHERE id = :id;
                 """), {
+                    "nro_recibo": nro_recibo,
+                    "fecha_cobro": fecha_cobro,
                     "monto": importe_periodo,
                     "estado": estado,
                     "metodo_pago": metodo_pago,
+                    "cobrador_id": cobrador_id,
+                    "observaciones": observaciones,
                     "id": item["id"],
                 })
                 db.session.execute(text("""
                     UPDATE movimientos_caja
-                    SET monto = :monto, metodo = :metodo
+                    SET fecha = :fecha, comprobante = :comprobante,
+                        interviene = :interviene, monto = :monto, metodo = :metodo,
+                        observaciones = :observaciones
                     WHERE cuota_id = :cuota_id;
                 """), {
+                    "fecha": fecha_cobro,
+                    "comprobante": nro_recibo,
+                    "interviene": nombre_cobrador,
                     "monto": importe_periodo,
                     "metodo": metodo_pago,
+                    "observaciones": observaciones,
                     "cuota_id": item["id"],
                 })
             db.session.commit()
             flash("Cuota actualizada correctamente.", "success")
-            return redirect(url_for("socios.listar_cuotas"))
+            if volver_matriz:
+                try:
+                    anio_retorno = int(anio_matriz)
+                except (TypeError, ValueError):
+                    anio_retorno = date.today().year
+                return redirect(url_for(
+                    "socios.matriz_cuotas",
+                    anio=anio_retorno,
+                    q=busqueda_matriz or None,
+                ))
+            return redirect(url_for("socios.ficha_socio", id=cuota["socio_id"]))
         except (InvalidOperation, TypeError, ValueError) as error:
             db.session.rollback()
             flash(str(error), "warning")
@@ -1290,10 +1954,16 @@ def editar_cuota(cuota_id):
     cobradores = db.session.execute(text("""
         SELECT id, nombre, apellido
         FROM cobradores
-        WHERE password IS NOT NULL
         ORDER BY nombre, apellido;
     """)).mappings().all()
-    return render_template("editar_cuota.html", cuota=cuota, cobradores=cobradores)
+    return render_template(
+        "editar_cuota.html",
+        cuota=cuota,
+        cobradores=cobradores,
+        volver_matriz=volver_matriz,
+        anio_matriz=anio_matriz,
+        busqueda_matriz=busqueda_matriz,
+    )
 
 
 @socios_bp.route("/caja", methods=["GET"])

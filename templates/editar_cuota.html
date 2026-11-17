@@ -13,19 +13,25 @@
 
                 <form method="POST" id="formEditarCuota">
                     <input type="hidden" name="cuota_id" value="{{ cuota.id }}">
+                    {% if volver_matriz %}
+                        <input type="hidden" name="volver_matriz" value="1">
+                        <input type="hidden" name="anio_matriz" value="{{ anio_matriz }}">
+                        <input type="hidden" name="busqueda_matriz" value="{{ busqueda_matriz }}">
+                    {% endif %}
 
                     <div class="alert alert-info">
                         <strong>Socio:</strong> {{ cuota.apellido }}, {{ cuota.nombre }} (N° {{ cuota.nro_socio or cuota.socio_id }})<br>
                         <strong>Fecha actual:</strong> {{ cuota.fecha_cobro.strftime('%d/%m/%Y') if cuota.fecha_cobro else '-' }} |
                         <strong>Tipo actual:</strong> {{ cuota.tipo_concepto or 'cuota_mensual' }}
+                        <div class="small mt-1">Los períodos y el tipo se conservan para no alterar la cobertura mensual del recibo.</div>
                     </div>
 
                     <div class="row g-3">
                         <!-- N° de Recibo -->
                         <div class="col-md-6 mb-3">
-                            <label for="nro_recibo" class="form-label fw-bold">N° Recibo / Comprobante (*)</label>
-                            <input type="text" class="form-control" id="nro_recibo" name="nro_recibo" 
-                                   value="{{ cuota.nro_recibo or '' }}" required>
+                            <label for="nro_recibo" class="form-label fw-bold">N° Recibo / Comprobante</label>
+                            <input type="text" class="form-control" id="nro_recibo" name="nro_recibo"
+                                   value="{{ cuota.nro_recibo or '' }}">
                         </div>
 
                         <!-- Fecha de Cobro -->
@@ -35,23 +41,16 @@
                                    value="{{ cuota.fecha_cobro.strftime('%Y-%m-%d') if cuota.fecha_cobro else '' }}" required>
                         </div>
 
-                        <!-- Período -->
+                        <!-- Periodo y concepto se conservan para no alterar la cobertura mensual -->
                         <div class="col-md-6 mb-3">
-                            <label for="periodo" class="form-label fw-bold">Período (*)</label>
-                            <input type="text" class="form-control" id="periodo" name="periodo" 
-                                   value="{{ cuota.periodo or '' }}" required>
-                            <div class="form-text">Ej: 0/2026 para inscripción, ene-26, jul-26, anual, etc.</div>
+                            <label class="form-label fw-bold">Período</label>
+                            <div class="form-control bg-light">{{ cuota.periodo or '-' }}</div>
                         </div>
 
                         <!-- Tipo de Concepto -->
                         <div class="col-md-6 mb-3">
-                            <label for="tipo_concepto" class="form-label fw-bold">Tipo de Concepto (*)</label>
-                            <select class="form-select border-primary" id="tipo_concepto" name="tipo_concepto" required>
-                                <option value="cuota_mensual" {% if (cuota.tipo_concepto or '') == 'cuota_mensual' %}selected{% endif %}>Cuota Mensual</option>
-                                <option value="cuota_anual" {% if (cuota.tipo_concepto or '') == 'cuota_anual' %}selected{% endif %}>Cuota Anual</option>
-                                <option value="inscripcion" {% if (cuota.tipo_concepto or '') == 'inscripcion' %}selected{% endif %}>Inscripción al Centro</option>
-                                <option value="otro" {% if (cuota.tipo_concepto or '') == 'otro' %}selected{% endif %}>Otro</option>
-                            </select>
+                            <label class="form-label fw-bold">Tipo de concepto</label>
+                            <div class="form-control bg-light">{{ cuota.tipo_concepto or 'Cuota social' }}</div>
                         </div>
 
                         <!-- Monto -->
@@ -82,7 +81,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="cobrador_id" class="form-label fw-bold">Cobrador / Responsable</label>
                             <select class="form-select" id="cobrador_id" name="cobrador_id">
-                                <option value="" {% if not cuota.cobrador_id %}selected{% endif %}>Seleccionar cobrador...</option>
+                                <option value="" {% if not cuota.cobrador_id %}selected{% endif %}>Sede central / Sin asignar</option>
                                 {% for cob in cobradores %}
                                 <option value="{{ cob.id }}" {% if cuota.cobrador_id == cob.id %}selected{% endif %}>
                                     {{ cob.nombre }} {{ cob.apellido or '' }}
@@ -110,7 +109,8 @@
 
                     <div class="d-flex gap-2 mt-4">
                         <button type="submit" class="btn btn-warning fw-bold px-4">💾 Guardar Cambios</button>
-                        <a href="{{ url_for('socios.ficha_socio', id=cuota.socio_id) }}" class="btn btn-secondary px-4"
+                        <a href="{{ url_for('socios.matriz_cuotas', anio=anio_matriz, q=busqueda_matriz or None) if volver_matriz else url_for('socios.ficha_socio', id=cuota.socio_id) }}"
+                           class="btn btn-secondary px-4"
                            onclick="if (window.history.length > 1) { window.history.back(); return false; }">← Volver</a>
                     </div>
                 </form>

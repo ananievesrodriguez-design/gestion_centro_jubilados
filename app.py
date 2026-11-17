@@ -2,8 +2,9 @@ import os
 from flask import Flask, render_template
 from sqlalchemy import text
 from dotenv import load_dotenv
-from config import SECRET_KEY, DATABASE_URL, inject_global_context
+from config import SECRET_KEY, DATABASE_URL, cargar_config, inject_global_context
 from models import db
+from cuotas_config import inicializar_valores_cuota
 from routes.auth import auth_bp
 from routes.admin import admin_bp
 from routes.socios import socios_bp
@@ -194,6 +195,14 @@ def create_app():
         except Exception:
             db.session.rollback()
             app.logger.exception("No se pudieron inicializar las tablas auxiliares")
+
+        try:
+            inicializar_valores_cuota(cargar_config())
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("No se pudo inicializar la configuración de cuotas")
+            raise
 
     @app.errorhandler(404)
     def pagina_no_encontrada(error):

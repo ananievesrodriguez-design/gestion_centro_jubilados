@@ -12,10 +12,10 @@
             <div class="card-body p-4">
 
                 <form method="POST" id="formCobroCuota"
-                      data-valor-mensual="{{ CONFIG.reglas_negocio.valor_cuota_mensual or CONFIG.reglas_negocio.valor_cuota_estandar or 200 }}"
-                      data-valor-anual-promo="{{ CONFIG.reglas_negocio.valor_anual_promocional or CONFIG.reglas_negocio.valor_cuota_promocional or 1500 }}"
-                      data-valor-anual-regular="{{ CONFIG.reglas_negocio.valor_anual_estandar or 2000 }}"
-                      data-valor-inscripcion="{{ CONFIG.reglas_negocio.valor_inscripcion or 2000 }}">
+                      data-valor-mensual="{{ valores_cuota.valor_cuota_mensual }}"
+                      data-valor-anual-promo="{{ valores_cuota.valor_anual_promocional }}"
+                      data-valor-anual-regular="{{ valores_cuota.valor_anual_estandar }}"
+                      data-valor-inscripcion="{{ valores_cuota.valor_inscripcion }}">
 
                     <!-- SELECTOR DE SOCIO -->
                     <div class="col-md-12 mb-3">

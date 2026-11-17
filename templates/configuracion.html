@@ -136,6 +136,7 @@
                     <h5 class="fw-bold mb-0 text-primary">5. Reglas Institucionales e Importes de Cuotas</h5>
                 </div>
                 <div class="card-body p-4">
+                    <small class="text-muted d-block mb-3">Los importes de cuotas se guardan en la base de datos y se comparten entre las instancias del sistema.</small>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción de Modalidades de Pago</label>
                         <textarea class="form-control" name="descripcion_general" rows="2">{{ cfg.reglas_negocio.descripcion_general }}</textarea>
@@ -150,8 +151,8 @@
                             <label class="form-label fw-bold">Cuota Mensual ($)</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" step="0.01" class="form-control" name="valor_cuota_mensual"
-                                       value="{{ cfg.reglas_negocio.valor_cuota_mensual or cfg.reglas_negocio.valor_cuota_estandar or 200 }}">
+                                <input type="number" min="0" max="9999999999.99" step="0.01" class="form-control" name="valor_cuota_mensual"
+                                       value="{{ valores_cuota.valor_cuota_mensual }}" required>
                             </div>
                             <small class="text-muted">Valor por mes individual.</small>
                         </div>
@@ -160,8 +161,8 @@
                             <label class="form-label fw-bold">Anual Bonificada (1° Semestre) ($)</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" step="0.01" class="form-control" name="valor_anual_promocional"
-                                       value="{{ cfg.reglas_negocio.valor_anual_promocional or cfg.reglas_negocio.valor_cuota_promocional or 1500 }}">
+                                <input type="number" min="0" max="9999999999.99" step="0.01" class="form-control" name="valor_anual_promocional"
+                                       value="{{ valores_cuota.valor_anual_promocional }}" required>
                             </div>
                             <small class="text-muted">Hasta el 30 de Junio.</small>
                         </div>
@@ -170,8 +171,8 @@
                             <label class="form-label fw-bold">Anual Estándar (2° Semestre) ($)</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" step="0.01" class="form-control" name="valor_anual_estandar"
-                                       value="{{ cfg.reglas_negocio.valor_anual_estandar or 2000 }}">
+                                <input type="number" min="0" max="9999999999.99" step="0.01" class="form-control" name="valor_anual_estandar"
+                                       value="{{ valores_cuota.valor_anual_estandar }}" required>
                             </div>
                             <small class="text-muted">Desde el 1 de Julio.</small>
                         </div>
@@ -180,8 +181,8 @@
                             <label class="form-label fw-bold">Arancel Inscripción ($)</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" step="0.01" class="form-control" name="valor_inscripcion"
-                                       value="{{ cfg.reglas_negocio.valor_inscripcion or 2000 }}">
+                                <input type="number" min="0" max="9999999999.99" step="0.01" class="form-control" name="valor_inscripcion"
+                                       value="{{ valores_cuota.valor_inscripcion }}" required>
                             </div>
                             <small class="text-muted">Ingreso de nuevo socio.</small>
                         </div>

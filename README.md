@@ -60,6 +60,8 @@ La autenticación existente de Supabase por correo sigue habilitada para cuentas
 
 ## Despliegue en Render
 
+El archivo `render.yaml` define el servicio web gratuito y deja los secretos fuera del repositorio. En Render, conectá el repositorio y la rama `main` usando **New → Blueprint**; al crear el servicio, cargá `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `DATABASE_URL` en el panel seguro. `SECRET_KEY` se genera automáticamente. No agregues `SUPABASE_SERVICE_ROLE_KEY` salvo que realmente la necesites; nunca la publiques ni la expongas al navegador.
+
 ### Servicio web
 
 - Conectá el repositorio y su rama de despliegue.
@@ -67,6 +69,7 @@ La autenticación existente de Supabase por correo sigue habilitada para cuentas
 - Start command: `gunicorn app:app`.
 - Configurá las variables obligatorias y cualquier variable opcional en **Environment**.
 - La URL de PostgreSQL debe ser accesible desde Render. Si se usa Supabase, comprobá que la cadena corresponda al modo de conexión y al driver indicados por Supabase.
+- El plan gratuito puede suspender el servicio por inactividad, y sus archivos locales no son persistentes. Los valores de cuotas y cobros se guardan en PostgreSQL; las demás modificaciones de `config_institucion.json` y archivos subidos al sitio pueden perderse tras reinicios o despliegues.
 
 ### Cron de WhatsApp
 

@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash
 import os
-from datetime import datetime
+from datetime import date, datetime
 from auth_manager import admin_required, login_required
 from config import (
     UPLOAD_FOLDER, NOVEDADES_UPLOAD_FOLDER, DOCUMENTOS_UPLOAD_FOLDER, FOTOS_PORTAL_UPLOAD_FOLDER,
@@ -13,9 +13,179 @@ from models import db
 from cuotas_config import (
     guardar_valores_cuota, obtener_valores_cuota, parsear_valores_cuota,
 )
+from comision_directiva import CARGOS_COMISION, CARGOS_COMISION_EXCLUSIVOS
 from whatsapp_service import whatsapp_template_configured
 
 admin_bp = Blueprint("admin", __name__)
+
+
+def _datos_formulario_comision(excluir_id=None):
+    socio_id = request.form.get("socio_id", "").strip()
+    cargo = request.form.get("cargo", "").strip()
+    fecha_inicio_texto = request.form.get("fecha_inicio", "").strip()
+    fecha_fin_texto = request.form.get("fecha_fin", "").strip()
+
+    if not socio_id.isdigit() or cargo not in CARGOS_COMISION:
+        flash("Seleccioná un socio activo y un cargo válido.", "warning")
+        return None
+    try:
+        fecha_inicio = datetime.strptime(fecha_inicio_texto, "%Y-%m-%d").date()
+        fecha_fin = (
+            datetime.strptime(fecha_fin_texto, "%Y-%m-%d").date()
+            if fecha_fin_texto else None
+        )
+    except ValueError:
+        flash("Ingresá fechas válidas para el período del cargo.", "warning")
+        return None
+    if fecha_fin and fecha_fin < fecha_inicio:
+        flash("La fecha de finalización no puede ser anterior a la de inicio.", "warning")
+        return None
+
+    socio = db.session.execute(text("""
+        SELECT id FROM socios
+        WHERE id = :id AND LOWER(COALESCE(estado, 'Activo')) = 'activo';
+    """), {"id": int(socio_id)}).first()
+    if not socio:
+        flash("Solo se pueden asignar cargos a socios activos.", "warning")
+        return None
+
+    if cargo in CARGOS_COMISION_EXCLUSIVOS:
+        cargo_ocupado = db.session.execute(text("""
+            SELECT 1
+            FROM comision_directiva
+            WHERE LOWER(cargo) = LOWER(:cargo)
+              AND fecha_inicio <= COALESCE(:fecha_fin, DATE '9999-12-31')
+              AND COALESCE(fecha_fin, DATE '9999-12-31') >= :fecha_inicio
+              AND id <> COALESCE(:excluir_id, 0)
+            LIMIT 1;
+        """), {
+            "cargo": cargo,
+            "fecha_inicio": fecha_inicio,
+            "fecha_fin": fecha_fin,
+            "excluir_id": excluir_id,
+        }).first()
+        if cargo_ocupado:
+            flash("Ya existe una persona asignada a ese cargo durante el período indicado.", "warning")
+            return None
+
+    return {
+        "socio_id": int(socio_id),
+        "cargo": cargo,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+    }
+
+
+@admin_bp.route("/comision-directiva", methods=["GET"])
+@admin_required
+def comision_directiva():
+    integrantes = db.session.execute(text("""
+        SELECT cd.id, cd.socio_id, cd.cargo, cd.fecha_inicio, cd.fecha_fin,
+               s.nro_socio, s.apellido, s.nombre,
+               cd.fecha_inicio <= CURRENT_DATE AND
+                   (cd.fecha_fin IS NULL OR cd.fecha_fin >= CURRENT_DATE) AS vigente,
+               cd.fecha_inicio > CURRENT_DATE AS programado,
+               cd.fecha_inicio <= CURRENT_DATE AND cd.fecha_fin IS NULL AS puede_finalizar
+        FROM comision_directiva cd
+        JOIN socios s ON s.id = cd.socio_id
+        ORDER BY cd.fecha_inicio DESC, cd.fecha_fin NULLS FIRST, cd.cargo, s.apellido, s.nombre;
+    """)).mappings().all()
+    socios_activos = db.session.execute(text("""
+        SELECT id, nro_socio, apellido, nombre
+        FROM socios
+        WHERE LOWER(COALESCE(estado, 'Activo')) = 'activo'
+        ORDER BY apellido, nombre;
+    """)).mappings().all()
+    return render_template(
+        "comision_directiva.html",
+        integrantes=integrantes,
+        socios_activos=socios_activos,
+        fecha_hoy=date.today().isoformat(),
+        cargos_comision=CARGOS_COMISION,
+    )
+
+
+@admin_bp.route("/comision-directiva/agregar", methods=["POST"])
+@admin_required
+def agregar_integrante_comision():
+    datos = _datos_formulario_comision()
+    if not datos:
+        return redirect(url_for("admin.comision_directiva"))
+
+    db.session.execute(text("""
+        INSERT INTO comision_directiva (socio_id, cargo, fecha_inicio, fecha_fin)
+        VALUES (:socio_id, :cargo, :fecha_inicio, :fecha_fin);
+    """), datos)
+    db.session.commit()
+    flash("Integrante agregado a la Comisión Directiva.", "success")
+    return redirect(url_for("admin.comision_directiva"))
+
+
+@admin_bp.route("/comision-directiva/<int:id>/editar", methods=["GET", "POST"])
+@admin_required
+def editar_integrante_comision(id):
+    integrante = db.session.execute(text("""
+        SELECT id, socio_id, cargo, fecha_inicio, fecha_fin
+        FROM comision_directiva
+        WHERE id = :id;
+    """), {"id": id}).mappings().first()
+    if not integrante:
+        flash("No se encontró el cargo que querés editar.", "warning")
+        return redirect(url_for("admin.comision_directiva"))
+
+    socios_activos = db.session.execute(text("""
+        SELECT id, nro_socio, apellido, nombre
+        FROM socios
+        WHERE LOWER(COALESCE(estado, 'Activo')) = 'activo'
+        ORDER BY apellido, nombre;
+    """)).mappings().all()
+    socio_activo_actual = any(socio["id"] == integrante["socio_id"] for socio in socios_activos)
+
+    if request.method == "POST":
+        datos = _datos_formulario_comision(excluir_id=id)
+        if not datos:
+            return render_template(
+                "editar_comision_directiva.html",
+                integrante=integrante,
+                socios_activos=socios_activos,
+                cargos_comision=CARGOS_COMISION,
+                socio_activo_actual=socio_activo_actual,
+            )
+        db.session.execute(text("""
+            UPDATE comision_directiva
+            SET socio_id = :socio_id, cargo = :cargo,
+                fecha_inicio = :fecha_inicio, fecha_fin = :fecha_fin
+            WHERE id = :id;
+        """), {**datos, "id": id})
+        db.session.commit()
+        flash("El integrante de la Comisión Directiva fue actualizado.", "success")
+        return redirect(url_for("admin.comision_directiva"))
+
+    return render_template(
+        "editar_comision_directiva.html",
+        integrante=integrante,
+        socios_activos=socios_activos,
+        cargos_comision=CARGOS_COMISION,
+        socio_activo_actual=socio_activo_actual,
+    )
+
+
+@admin_bp.route("/comision-directiva/<int:id>/finalizar", methods=["POST"])
+@admin_required
+def finalizar_cargo_comision(id):
+    result = db.session.execute(text("""
+        UPDATE comision_directiva
+        SET fecha_fin = CURRENT_DATE
+        WHERE id = :id
+          AND fecha_fin IS NULL
+          AND fecha_inicio <= CURRENT_DATE;
+    """), {"id": id})
+    db.session.commit()
+    if result.rowcount:
+        flash("El cargo fue finalizado.", "success")
+    else:
+        flash("No se encontró un cargo vigente para finalizar.", "warning")
+    return redirect(url_for("admin.comision_directiva"))
 
 
 @admin_bp.route("/cobradores", methods=["POST"])

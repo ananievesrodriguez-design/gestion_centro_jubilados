@@ -108,7 +108,7 @@
                 </li>
 
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin.listar_novedades', 'admin.cobradores_list', 'admin.listar_archivos_portal', 'admin.configuracion'] %}active{% endif %}"
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin.listar_novedades', 'admin.cobradores_list', 'admin.listar_archivos_portal', 'admin.configuracion', 'admin.comision_directiva'] %}active{% endif %}"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-gear me-1" aria-hidden="true"></i> Administración
                     </a>
@@ -123,6 +123,12 @@
                             <a class="dropdown-item {% if request.endpoint == 'admin.cobradores_list' %}active{% endif %}"
                                href="{{ url_for('admin.cobradores_list') }}">
                                 <i class="fas fa-user-group me-2" aria-hidden="true"></i>Usuarios y permisos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'admin.comision_directiva' %}active{% endif %}"
+                               href="{{ url_for('admin.comision_directiva') }}">
+                                <i class="fas fa-people-group me-2" aria-hidden="true"></i>Comisión Directiva
                             </a>
                         </li>
                         <li>

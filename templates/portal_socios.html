@@ -46,61 +46,95 @@
         </section>
 
         <nav class="portal-shortcuts" aria-label="Accesos rápidos">
+            <a href="#seccionCumpleHoy"><i class="fas fa-cake-candles" aria-hidden="true"></i> Cumpleaños</a>
+            <a href="#seccionNovedades"><i class="fas fa-bullhorn" aria-hidden="true"></i> Novedades</a>
             <a href="#seccionConsulta" data-bs-toggle="collapse" aria-controls="seccionConsulta">
                 <i class="fas fa-receipt" aria-hidden="true"></i> Mis cuotas
             </a>
-            <a href="#seccionNovedades"><i class="fas fa-bullhorn" aria-hidden="true"></i> Novedades</a>
-            <a href="#seccionCumpleHoy"><i class="fas fa-cake-candles" aria-hidden="true"></i> Cumpleaños</a>
             <a href="#seccionDocumentos"><i class="fas fa-folder-open" aria-hidden="true"></i> Documentos</a>
             <a href="#seccionFotos"><i class="fas fa-images" aria-hidden="true"></i> Galería</a>
             <a href="#seccionAutoridades"><i class="fas fa-users" aria-hidden="true"></i> Autoridades</a>
         </nav>
 
-        <section id="seccionAutoridades" class="portal-section mb-4" aria-labelledby="autoridadesTitle">
-            <div class="portal-section-heading">
-                <div>
-                    <p class="portal-eyebrow">Quiénes nos representan</p>
-                    <h3 id="autoridadesTitle">Comisión Directiva</h3>
+        <!-- SECCIÓN: CUMPLEAÑOS DEL DÍA -->
+        <div id="seccionCumpleHoy" class="portal-section mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="portal-section-heading">
+                    <span class="portal-section-icon portal-section-icon-warm"><i class="fas fa-cake-candles" aria-hidden="true"></i></span>
+                    <div><p class="portal-eyebrow">Celebramos en comunidad</p><h3 class="fw-bold text-dark mb-0">Cumpleaños de hoy <span class="text-muted">({{ hoy.strftime('%d/%m') }})</span></h3></div>
                 </div>
+                <span class="badge bg-success fs-6">{{ cumple_hoy|length }} socio{% if cumple_hoy|length != 1 %}s{% endif %}</span>
             </div>
-            <div class="row g-3">
-                {% if comision %}
-                    {% for integrante in comision %}
-                    <div class="col-md-6 col-xl-4">
-                        <article class="card card-amigable portal-authority-card h-100">
-                            <div class="card-body">
-                                <p class="portal-authority-role mb-2">{{ integrante.cargo }}</p>
-                                <h4 class="h5 fw-bold mb-3">{{ integrante.nombre }}</h4>
-                                {% if integrante.domicilio %}
-                                <p class="text-muted mb-2">
-                                    <i class="fas fa-location-dot me-2" aria-hidden="true"></i>{{ integrante.domicilio }}
-                                </p>
-                                {% endif %}
-                                {% if integrante.telefono %}
-                                <p class="mb-2">
-                                    <i class="fas fa-phone me-2" aria-hidden="true"></i>
-                                    <a href="tel:{{ integrante.telefono }}" class="text-decoration-none">{{ integrante.telefono }}</a>
-                                </p>
-                                {% endif %}
-                                {% if integrante.inicio or integrante.fin %}
-                                <p class="small text-muted mb-0">
-                                    <i class="fas fa-calendar-days me-2" aria-hidden="true"></i>
-                                    {{ integrante.inicio or '—' }} al {{ integrante.fin or '—' }}
-                                </p>
+
+            {% if cumple_hoy %}
+                <div class="row g-3 mb-4">
+                    {% for c in cumple_hoy %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card card-amigable cumple-card p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-primary me-2">#{{ c.nro_socio or c.id }}</span>
+                                {% if c.edad %}
+                                    <span class="edad-badge">{{ c.edad }} años</span>
                                 {% endif %}
                             </div>
-                        </article>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="col-12">
-                        <div class="alert alert-light border mb-0" role="status">
-                            No hay datos registrados de la Comisión Directiva.
+                            <strong class="fs-5 d-block text-dark">{{ c.apellido }}, {{ c.nombre }}</strong>
+                            <div class="text-muted small mt-2">
+                                <i class="fas fa-phone me-1"></i> {{ c.telefono or 'Sin teléfono registrado' }}
+                            </div>
                         </div>
                     </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card card-amigable bg-white text-center p-4">
+                    <i class="fas fa-cake-candles icono-grande text-muted"></i>
+                    <h5 class="fw-bold text-dark mt-3 mb-2">Hoy no hay cumpleaños</h5>
+                    <p class="text-muted">Ningún socio cumple años hoy. ¡Volvé mañana para ver quiénes celebran!</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- SECCIÓN: NOVEDADES DEL CENTRO -->
+        <div id="seccionNovedades" class="portal-section mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="portal-section-heading">
+                    <span class="portal-section-icon"><i class="fas fa-bullhorn" aria-hidden="true"></i></span>
+                    <div><p class="portal-eyebrow">Al día con el centro</p><h3 class="fw-bold text-dark mb-0">Novedades y comunicados</h3></div>
+                </div>
+                {% if novedades %}
+                    <span class="badge bg-primary fs-6">{{ novedades|length }} novedad{% if novedades|length != 1 %}es{% endif %}</span>
                 {% endif %}
             </div>
-        </section>
+
+            {% if novedades %}
+                <div class="row g-3 mb-4">
+                    {% for n in novedades %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card novedad-card h-100 p-3">
+                            {% if n.imagen %}
+                                <img src="{{ url_for('static', filename='img/novedades/' + n.imagen) }}" class="img-fluid-novedad mb-3" alt="{{ n.titulo }}">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center rounded-3 mb-3" style="height: 160px; border: 1px dashed #ddd;">
+                                    <span class="text-muted small">Sin imagen</span>
+                                </div>
+                            {% endif %}
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-primary fs-6">{{ n.fecha_publicacion.strftime('%d/%m/%Y') if n.fecha_publicacion else '-' }}</span>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-2">{{ n.titulo }}</h5>
+                            <p class="text-muted small mb-3">{{ n.contenido or 'Sin descripción.' }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card card-amigable bg-white text-center p-4">
+                    <i class="fas fa-bullhorn icono-grande text-muted"></i>
+                    <h5 class="fw-bold text-dark mt-3 mb-2">No hay novedades registradas</h5>
+                    <p class="text-muted">Pronto publicaremos avisos y comunicados del centro.</p>
+                </div>
+            {% endif %}
+        </div>
 
         <section class="portal-section mb-4" aria-labelledby="informacionUtilTitle">
             <div class="portal-section-heading mb-3">
@@ -313,11 +347,11 @@
                                     <tbody>
                                         {% for c in cuotas %}
                                         <tr>
-                                            <td>{{ c.fecha_cobro.strftime('%d/%m/%Y') if c.fecha_cobro and c.fecha_cobro.strftime else (c.fecha_cobro or '-') }}</td>
-                                            <td><span class="badge bg-light text-dark border">{{ c.periodo or ('Año ' ~ c.anio) }}</span></td>
-                                            <td class="text-muted small">{{ c.comprobante or '-' }}</td>
-                                            <td class="text-end fw-bold text-success">${{ "{:,.2f}".format(c.monto or 0) }}</td>
-                                            <td class="text-center">
+                                            <td data-label="Fecha">{{ c.fecha_cobro.strftime('%d/%m/%Y') if c.fecha_cobro and c.fecha_cobro.strftime else (c.fecha_cobro or '-') }}</td>
+                                            <td data-label="Período"><span class="badge bg-light text-dark border">{{ c.periodo or ('Año ' ~ c.anio) }}</span></td>
+                                            <td data-label="Comprobante" class="text-muted small">{{ c.comprobante or '-' }}</td>
+                                            <td data-label="Monto" class="text-end fw-bold text-success">${{ "{:,.2f}".format(c.monto or 0) }}</td>
+                                            <td data-label="Descargar" class="text-center">
                                                 <a href="{{ url_for('socios.imprimir_recibo',  cuota_id=c.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-2">
                                                     📥 PDF
                                                 </a>
@@ -337,86 +371,6 @@
                     <p class="mb-0">No se encontraron registros con el documento <strong>"{{ termino }}"</strong>.</p>
                 </div>
             {% endif %}
-        {% endif %}
-    </div>
-
-    <!-- SECCIÓN: NOVEDADES DEL CENTRO -->
-    <div id="seccionNovedades" class="portal-section mt-5">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="portal-section-heading">
-                <span class="portal-section-icon"><i class="fas fa-bullhorn" aria-hidden="true"></i></span>
-                <div><p class="portal-eyebrow">Al día con el centro</p><h3 class="fw-bold text-dark mb-0">Novedades y comunicados</h3></div>
-            </div>
-            {% if novedades %}
-                <span class="badge bg-primary fs-6">{{ novedades|length }} novedad{% if novedades|length != 1 %}es{% endif %}</span>
-            {% endif %}
-        </div>
-
-        {% if novedades %}
-            <div class="row g-3 mb-4">
-                {% for n in novedades %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card novedad-card h-100 p-3">
-                        {% if n.imagen %}
-                            <img src="{{ url_for('static', filename='img/novedades/' + n.imagen) }}" class="img-fluid-novedad mb-3" alt="{{ n.titulo }}">
-                        {% else %}
-                            <div class="bg-light d-flex align-items-center justify-content-center rounded-3 mb-3" style="height: 160px; border: 1px dashed #ddd;">
-                                <span class="text-muted small">Sin imagen</span>
-                            </div>
-                        {% endif %}
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="badge bg-primary fs-6">{{ n.fecha_publicacion.strftime('%d/%m/%Y') if n.fecha_publicacion else '-' }}</span>
-                        </div>
-                        <h5 class="fw-bold text-dark mb-2">{{ n.titulo }}</h5>
-                        <p class="text-muted small mb-3">{{ n.contenido or 'Sin descripción.' }}</p>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="card card-amigable bg-white text-center p-4">
-                <i class="fas fa-bullhorn icono-grande text-muted"></i>
-                <h5 class="fw-bold text-dark mt-3 mb-2">No hay novedades registradas</h5>
-                <p class="text-muted">Pronto publicaremos avisos y comunicados del centro.</p>
-            </div>
-        {% endif %}
-    </div>
-
-    <!-- SECCIÓN: CUMPLEAÑOS DEL DÍA -->
-    <div id="seccionCumpleHoy" class="portal-section mt-5">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="portal-section-heading">
-                <span class="portal-section-icon portal-section-icon-warm"><i class="fas fa-cake-candles" aria-hidden="true"></i></span>
-                <div><p class="portal-eyebrow">Celebramos en comunidad</p><h3 class="fw-bold text-dark mb-0">Cumpleaños de hoy <span class="text-muted">({{ hoy.strftime('%d/%m') }})</span></h3></div>
-            </div>
-            <span class="badge bg-success fs-6">{{ cumple_hoy|length }} socio{% if cumple_hoy|length != 1 %}s{% endif %}</span>
-        </div>
-
-        {% if cumple_hoy %}
-            <div class="row g-3 mb-4">
-                {% for c in cumple_hoy %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card card-amigable cumple-card p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="badge bg-primary me-2">#{{ c.nro_socio or c.id }}</span>
-                            {% if c.edad %}
-                                <span class="edad-badge">{{ c.edad }} años</span>
-                            {% endif %}
-                        </div>
-                        <strong class="fs-5 d-block text-dark">{{ c.apellido }}, {{ c.nombre }}</strong>
-                        <div class="text-muted small mt-2">
-                            <i class="fas fa-phone me-1"></i> {{ c.telefono or 'Sin teléfono registrado' }}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="card card-amigable bg-white text-center p-4">
-                <i class="fas fa-cake-candles icono-grande text-muted"></i>
-                <h5 class="fw-bold text-dark mt-3 mb-2">Hoy no hay cumpleaños</h5>
-                <p class="text-muted">Ningún socio cumple años hoy. ¡Volvé mañana para ver quiénes celebran!</p>
-            </div>
         {% endif %}
     </div>
 
@@ -441,21 +395,21 @@
                     <tbody>
                         {% for m in cumple_mes %}
                         <tr>
-                            <td class="text-center fw-bold text-primary fs-6">
+                            <td data-label="Día" class="text-center fw-bold text-primary fs-6">
                                 {{ "%02d"|format(m.dia_cumple) }}
                             </td>
-                            <td>
+                            <td data-label="Socio">
                                 <span class="text-muted small">#{{ m.nro_socio or m.id }}</span><br>
                                 <strong class="d-block">{{ m.apellido }}, {{ m.nombre }}</strong>
                             </td>
-                            <td class="text-center">
+                            <td data-label="Edad" class="text-center">
                                 {% if m.edad %}
                                     <span class="edad-badge">{{ m.edad }} años</span>
                                 {% else %}
                                     -
                                 {% endif %}
                             </td>
-                            <td>{{ m.telefono or 'Sin teléfono' }}</td>
+                            <td data-label="Teléfono">{{ m.telefono or 'Sin teléfono' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -585,6 +539,35 @@
             </div>
         {% endif %}
     </div>
+
+    <section id="seccionAutoridades" class="portal-section mt-5" aria-labelledby="autoridadesTitle">
+        <div class="portal-section-heading mb-3">
+            <div>
+                <p class="portal-eyebrow">Quiénes nos representan</p>
+                <h3 id="autoridadesTitle">Comisión Directiva</h3>
+            </div>
+        </div>
+        <div class="row g-3">
+            {% if comision %}
+                {% for integrante in comision %}
+                <div class="col-md-6 col-xl-4">
+                    <article class="card card-amigable portal-authority-card h-100">
+                        <div class="card-body">
+                            <p class="portal-authority-role mb-2">{{ integrante.cargo }}</p>
+                            <h4 class="h5 fw-bold mb-0">{{ integrante.apellido }}, {{ integrante.nombre }}</h4>
+                        </div>
+                    </article>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-light border mb-0" role="status">
+                        No hay datos registrados de la Comisión Directiva.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </section>
 
 </div>
 </div>

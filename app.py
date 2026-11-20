@@ -197,6 +197,24 @@ def create_app():
             app.logger.exception("No se pudieron inicializar las tablas auxiliares")
 
         try:
+            db.session.execute(text("""
+                CREATE TABLE IF NOT EXISTS comision_directiva (
+                    id SERIAL PRIMARY KEY,
+                    socio_id INTEGER NOT NULL REFERENCES socios(id) ON DELETE RESTRICT,
+                    cargo VARCHAR(80) NOT NULL,
+                    fecha_inicio DATE NOT NULL,
+                    fecha_fin DATE,
+                    CONSTRAINT ck_comision_directiva_fechas
+                        CHECK (fecha_fin IS NULL OR fecha_fin >= fecha_inicio)
+                );
+            """))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("No se pudo inicializar la tabla de Comisión Directiva")
+            raise
+
+        try:
             inicializar_valores_cuota(cargar_config())
             db.session.commit()
         except Exception:

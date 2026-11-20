@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Comisión Directiva - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold text-primary mb-0">Comisión Directiva</h4>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoIntegrante">
+            + Agregar integrante
+        </button>
+    </div>
+
+    <div class="alert alert-info" role="status">
+        Los cargos vigentes se muestran en el portal. Solo se pueden asignar a socios activos.
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Socio</th>
+                            <th>Cargo</th>
+                            <th>Desde</th>
+                            <th>Hasta</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for integrante in integrantes %}
+                        <tr>
+                            <td>
+                                {% if integrante.nro_socio %}N° {{ integrante.nro_socio }} · {% endif %}
+                                {{ integrante.apellido }}, {{ integrante.nombre }}
+                            </td>
+                            <td>{{ integrante.cargo }}</td>
+                            <td>{{ integrante.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ integrante.fecha_fin.strftime('%d/%m/%Y') if integrante.fecha_fin else '—' }}</td>
+                            <td>
+                                {% if integrante.vigente %}
+                                <span class="badge bg-success">Vigente</span>
+                                {% elif integrante.programado %}
+                                <span class="badge bg-info text-dark">Programado</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Finalizado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                <a class="btn btn-outline-primary btn-sm"
+                                   href="{{ url_for('admin.editar_integrante_comision', id=integrante.id) }}">
+                                    Editar
+                                </a>
+                                {% if integrante.puede_finalizar %}
+                                <form method="POST" action="{{ url_for('admin.finalizar_cargo_comision', id=integrante.id) }}"
+                                      onsubmit="return confirm('¿Finalizar el cargo de {{ integrante.apellido }}, {{ integrante.nombre }}?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Finalizar</button>
+                                </form>
+                                {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">Todavía no hay cargos registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNuevoIntegrante" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.agregar_integrante_comision') }}">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Agregar integrante</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="socioComision">Socio activo</label>
+                        <select class="form-select" id="socioComision" name="socio_id" required>
+                            <option value="" selected disabled>Seleccioná un socio</option>
+                            {% for socio in socios_activos %}
+                            <option value="{{ socio.id }}">
+                                {% if socio.nro_socio %}N° {{ socio.nro_socio }} · {% endif %}
+                                {{ socio.apellido }}, {{ socio.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="cargoComision">Cargo</label>
+                        <select class="form-select" id="cargoComision" name="cargo" required>
+                            <option value="" selected disabled>Seleccioná el cargo</option>
+                            {% for cargo in cargos_comision %}
+                            <option value="{{ cargo }}">{{ cargo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label fw-bold" for="inicioComision">Fecha de inicio</label>
+                            <input type="date" class="form-control" id="inicioComision" name="fecha_inicio"
+                                   value="{{ fecha_hoy }}" required>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label fw-bold" for="finComision">Fecha de finalización</label>
+                            <input type="date" class="form-control" id="finComision" name="fecha_fin">
+                            <div class="form-text">Dejar vacía si todavía no finalizó.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar cargo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

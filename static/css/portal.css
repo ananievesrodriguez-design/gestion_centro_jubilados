@@ -514,6 +514,161 @@
     }
 }
 
+@media (max-width: 575.98px) {
+    .portal-container {
+        width: min(100% - 1rem, 1320px);
+    }
+
+    .portal-hero-inner {
+        gap: 0.6rem;
+    }
+
+    .portal-brand {
+        gap: 0.6rem;
+    }
+
+    .portal-logo,
+    .portal-logo-placeholder {
+        width: 50px;
+        height: 50px;
+        flex-basis: 50px;
+        padding: 5px;
+    }
+
+    .portal-brand h1,
+    .portal-location {
+        overflow-wrap: anywhere;
+    }
+
+    .portal-brand h1 {
+        font-size: 1.05rem;
+    }
+
+    .portal-brand .portal-eyebrow {
+        font-size: 0.58rem;
+        letter-spacing: 0.08em;
+    }
+
+    .portal-location {
+        font-size: 0.76rem;
+        line-height: 1.35;
+    }
+
+    .portal-admin-button {
+        width: 44px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .portal-welcome {
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .portal-welcome h2 {
+        font-size: 1.4rem;
+        line-height: 1.25;
+    }
+
+    .portal-welcome-mark {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+
+    .portal-shortcuts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+        gap: 0.2rem;
+        padding: 0.35rem;
+    }
+
+    .portal-shortcuts a {
+        min-width: 0;
+        min-height: 48px;
+        justify-content: flex-start;
+        gap: 0.4rem;
+        padding: 0.55rem 0.45rem;
+        font-size: 0.85rem;
+        line-height: 1.2;
+        white-space: normal;
+    }
+
+    .portal-shortcuts a i {
+        flex: 0 0 1rem;
+        text-align: center;
+    }
+
+    .portal-page #seccionNovedades > .d-flex,
+    .portal-page #seccionCumpleHoy > .d-flex,
+    .portal-page #seccionFotos > .d-flex {
+        flex-wrap: wrap;
+        align-items: flex-start !important;
+        gap: 0.65rem;
+    }
+
+    .portal-page .portal-section-heading {
+        min-width: 0;
+    }
+
+    .portal-page .portal-section-heading h3 {
+        overflow-wrap: anywhere;
+        line-height: 1.25;
+    }
+
+    .portal-page .table-responsive {
+        overflow: visible;
+        border: 0;
+    }
+
+    .portal-page .table {
+        display: block;
+        width: 100%;
+    }
+
+    .portal-page .table thead {
+        display: none;
+    }
+
+    .portal-page .table tbody {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .portal-page .table tbody tr {
+        display: block;
+        overflow: hidden;
+        border: 1px solid #e1e9ee;
+        border-radius: 13px;
+        background: #fff;
+    }
+
+    .portal-page .table tbody td {
+        display: grid;
+        grid-template-columns: minmax(5.5rem, 34%) minmax(0, 1fr);
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.7rem 0.8rem;
+        border-bottom: 1px solid #edf1f4;
+        text-align: left !important;
+        overflow-wrap: anywhere;
+    }
+
+    .portal-page .table tbody td:last-child {
+        border-bottom: 0;
+    }
+
+    .portal-page .table tbody td::before {
+        color: #51677a;
+        content: attr(data-label);
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .portal-page *,
     .portal-page *::before,

@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from auth_manager import admin_required, login_required
 from models import db
 from cuotas_config import obtener_valores_cuota
+from comision_directiva import ordenar_integrantes_comision
 from config import (
     DOCUMENTOS_UPLOAD_FOLDER, FOTOS_PORTAL_UPLOAD_FOLDER, cargar_config,
 )
@@ -702,7 +703,15 @@ def portal_socios():
     es_mes_cumpleanos = False
 
     config = cargar_config()
-    comision = config.get("comision_directiva", [])
+    comision = ordenar_integrantes_comision(db.session.execute(text("""
+        SELECT cd.cargo, s.apellido, s.nombre
+        FROM comision_directiva cd
+        JOIN socios s ON s.id = cd.socio_id
+        WHERE LOWER(COALESCE(s.estado, 'Activo')) = 'activo'
+          AND cd.fecha_inicio <= CURRENT_DATE
+          AND (cd.fecha_fin IS NULL OR cd.fecha_fin >= CURRENT_DATE)
+        ORDER BY cd.cargo, s.apellido, s.nombre;
+    """)).mappings().all())
     hoy = date.today()
 
     sql_novedades = """

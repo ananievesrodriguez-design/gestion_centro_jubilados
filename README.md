@@ -40,7 +40,8 @@ Opcionales:
 
 | Variable | Descripción |
 |---|---|
-| `SUPABASE_SERVICE_ROLE_KEY` | Clave administrativa para funciones de Supabase que la requieran. Nunca debe exponerse al navegador. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clave administrativa requerida para subir fotos a Supabase Storage. Nunca debe exponerse al navegador. |
+| `SUPABASE_PORTAL_BUCKET` | Bucket público de Supabase Storage para las fotos del portal; por defecto `portal-media`. |
 | `WHATSAPP_ACCESS_TOKEN` | Token de WhatsApp Cloud API. |
 | `WHATSAPP_PHONE_NUMBER_ID` | Identificador del número emisor de WhatsApp Business. |
 | `WHATSAPP_BIRTHDAY_TEMPLATE` | Nombre de la plantilla aprobada para cumpleaños; cuerpo con un parámetro: nombre. |
@@ -60,7 +61,7 @@ La autenticación existente de Supabase por correo sigue habilitada para cuentas
 
 ## Despliegue en Render
 
-El archivo `render.yaml` define el servicio web gratuito y deja los secretos fuera del repositorio. En Render, conectá el repositorio y la rama `main` usando **New → Blueprint**; al crear el servicio, cargá `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `DATABASE_URL` en el panel seguro. `SECRET_KEY` se genera automáticamente. No agregues `SUPABASE_SERVICE_ROLE_KEY` salvo que realmente la necesites; nunca la publiques ni la expongas al navegador.
+El archivo `render.yaml` define el servicio web gratuito y deja los secretos fuera del repositorio. En Render, conectá el repositorio y la rama `main` usando **New → Blueprint**; al crear el servicio, cargá `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y `DATABASE_URL` en el panel seguro. `SECRET_KEY` se genera automáticamente. La clave `SUPABASE_SERVICE_ROLE_KEY` se usa solo desde el servidor para cargar fotos; nunca la publiques ni la expongas al navegador.
 
 ### Servicio web
 
@@ -82,7 +83,9 @@ El proceso encola los cumpleaños desde las 9:00 hora argentina y procesa hasta 
 
 ### Archivos subidos
 
-Los documentos y fotos se guardan hoy dentro de `static/`. El disco de un servicio Render puede ser efímero y los Cron Jobs no comparten un disco persistente con el servicio web. Antes de depender de archivos cargados en producción, migrá esos archivos a almacenamiento persistente (por ejemplo, Supabase Storage) o configurá una solución compatible; no asumas que los archivos sobrevivirán a un redeploy o reinicio.
+Las fotos nuevas de **Administración → Archivos del portal** se guardan en el bucket público `portal-media` de Supabase Storage; configurá `SUPABASE_SERVICE_ROLE_KEY` en Render para habilitar la carga y creá el bucket con acceso público de lectura. La clave administrativa se mantiene en el servidor. Los documentos siguen guardándose en `static/`, cuyo disco puede ser efímero en Render.
+
+La columna `archivos_portal.archivo` contiene una ruta/nombre, no los bytes de la imagen. Las fotos que se cargaron antes de habilitar Storage deben volver a subirse desde **Editar archivo** para copiarlas al bucket; al hacerlo, el portal conservará el registro de la tabla y utilizará la imagen persistente.
 
 ## Estructura principal
 

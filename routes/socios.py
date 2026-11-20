@@ -15,6 +15,9 @@ from comision_directiva import ordenar_integrantes_comision
 from config import (
     DOCUMENTOS_UPLOAD_FOLDER, FOTOS_PORTAL_UPLOAD_FOLDER, cargar_config,
 )
+from portal_storage import (
+    descargar_foto_portal, es_foto_en_storage, url_publica_foto_portal,
+)
 
 socios_bp = Blueprint("socios", __name__)
 
@@ -887,6 +890,15 @@ def descargar_archivo_portal(id):
         flash("Archivo no encontrado o no disponible.", "warning")
         return redirect(url_for("socios.portal_socios"))
 
+    if archivo["tipo"] == "foto" and es_foto_en_storage(archivo["archivo"]):
+        contenido = descargar_foto_portal(archivo["archivo"])
+        extension = archivo["archivo"].rsplit(".", 1)[-1].lower()
+        return send_file(
+            io.BytesIO(contenido),
+            as_attachment=True,
+            download_name=f"{archivo['titulo']}.{extension}",
+        )
+
     carpeta = DOCUMENTOS_UPLOAD_FOLDER if archivo["tipo"] in ("estatuto", "memoria_balance") else FOTOS_PORTAL_UPLOAD_FOLDER
     ruta = os.path.join(carpeta, archivo["archivo"])
     if not os.path.exists(ruta):
@@ -898,6 +910,26 @@ def descargar_archivo_portal(id):
         as_attachment=True,
         download_name=f"{archivo['titulo']}.{archivo['archivo'].rsplit('.', 1)[1].lower()}"
     )
+
+
+@socios_bp.route("/archivos-portal/foto/<int:id>")
+def ver_foto_portal(id):
+    archivo = db.session.execute(text("""
+        SELECT archivo
+        FROM archivos_portal
+        WHERE id = :id AND tipo = 'foto' AND activa = TRUE;
+    """), {"id": id}).mappings().first()
+    if not archivo:
+        abort(404)
+
+    if es_foto_en_storage(archivo["archivo"]):
+        return redirect(url_publica_foto_portal(archivo["archivo"]))
+
+    ruta = os.path.join(FOTOS_PORTAL_UPLOAD_FOLDER, archivo["archivo"])
+    if not os.path.isfile(ruta):
+        current_app.logger.warning("No se encontró el archivo local de la foto del portal %s", id)
+        abort(404)
+    return send_file(ruta)
 
 
 @socios_bp.route("/socios")

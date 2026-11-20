@@ -5,7 +5,7 @@ import os
 from datetime import date, datetime
 from auth_manager import admin_required, login_required
 from config import (
-    UPLOAD_FOLDER, NOVEDADES_UPLOAD_FOLDER, DOCUMENTOS_UPLOAD_FOLDER, FOTOS_PORTAL_UPLOAD_FOLDER,
+    UPLOAD_FOLDER, NOVEDADES_UPLOAD_FOLDER, DOCUMENTOS_UPLOAD_FOLDER,
     EXTENSIONES_PERMITIDAS, EXTENSIONES_DOCUMENTOS, cargar_config, guardar_config,
     archivo_permitido, documento_permitido, WHATSAPP_NEWS_TEMPLATE,
 )
@@ -14,6 +14,7 @@ from cuotas_config import (
     guardar_valores_cuota, obtener_valores_cuota, parsear_valores_cuota,
 )
 from comision_directiva import CARGOS_COMISION, CARGOS_COMISION_EXCLUSIVOS
+from portal_storage import eliminar_foto_portal, es_foto_en_storage, subir_foto_portal
 from whatsapp_service import whatsapp_template_configured
 
 admin_bp = Blueprint("admin", __name__)
@@ -696,13 +697,14 @@ def listar_archivos_portal():
 @admin_required
 def archivos_portal_nueva():
     MAX_FILE_SIZE = 10 * 1024 * 1024
+    TIPOS_ARCHIVO = {"foto", "estatuto", "memoria_balance"}
     titulo = request.form.get("titulo", "").strip()
     descripcion = request.form.get("descripcion", "").strip()
     tipo = request.form.get("tipo", "").strip()
     activa = request.form.get("activa") == "on"
     orden = int(request.form.get("orden", "0") or 0)
 
-    if not titulo or not tipo or "archivo" not in request.files:
+    if not titulo or tipo not in TIPOS_ARCHIVO or "archivo" not in request.files:
         flash("Datos incompletos o archivo no seleccionado.", "warning")
         return redirect(url_for("admin.listar_archivos_portal"))
 
@@ -726,13 +728,18 @@ def archivos_portal_nueva():
         flash("El archivo supera el límite de 10 MB.", "warning")
         return redirect(url_for("admin.listar_archivos_portal"))
 
-    carpeta = DOCUMENTOS_UPLOAD_FOLDER if tipo in ("estatuto", "memoria_balance") else FOTOS_PORTAL_UPLOAD_FOLDER
-    os.makedirs(carpeta, exist_ok=True)
-    nombre_archivo = f"portal_{tipo}_{int(datetime.now().timestamp())}.{ext}"
-    ruta_destino = os.path.join(carpeta, nombre_archivo)
-
+    ruta_destino = None
+    ruta_storage = None
     try:
-        archivo.save(ruta_destino)
+        if tipo == "foto":
+            ruta_storage = subir_foto_portal(archivo, archivo.filename)
+            nombre_archivo = ruta_storage
+        else:
+            os.makedirs(DOCUMENTOS_UPLOAD_FOLDER, exist_ok=True)
+            nombre_archivo = f"portal_{tipo}_{int(datetime.now().timestamp())}.{ext}"
+            ruta_destino = os.path.join(DOCUMENTOS_UPLOAD_FOLDER, nombre_archivo)
+            archivo.save(ruta_destino)
+
         db.session.execute(text("""
             INSERT INTO archivos_portal (titulo, descripcion, tipo, archivo, activa, orden, fecha_subida)
             VALUES (:titulo, :descripcion, :tipo, :archivo, :activa, :orden, NOW());
@@ -741,8 +748,13 @@ def archivos_portal_nueva():
         flash("Archivo subido correctamente al portal.", "success")
     except Exception:
         db.session.rollback()
-        if os.path.exists(ruta_destino):
+        if ruta_destino and os.path.exists(ruta_destino):
             os.remove(ruta_destino)
+        if ruta_storage:
+            try:
+                eliminar_foto_portal(ruta_storage)
+            except Exception:
+                current_app.logger.exception("No se pudo limpiar una foto de Supabase Storage tras un error")
         current_app.logger.exception("No se pudo guardar el archivo del portal")
         flash("No se pudo guardar el archivo. Verifique el archivo e inténtelo nuevamente.", "danger")
 
@@ -774,6 +786,15 @@ def archivos_portal_editar(id):
         activa = str(request.form.get("activa")) == "on"
         imagen_nombre = archivo.get("archivo")
         f = request.files.get("archivo")
+        if not titulo or tipo not in {"foto", "estatuto", "memoria_balance"}:
+            flash("Ingresá un título y seleccioná un tipo de archivo válido.", "warning")
+            return redirect(url_for("admin.listar_archivos_portal"))
+        if tipo != archivo["tipo"] and (not f or not f.filename):
+            flash("Al cambiar el tipo de archivo, también tenés que seleccionar un archivo nuevo.", "warning")
+            return redirect(url_for("admin.listar_archivos_portal"))
+
+        nueva_ruta_storage = None
+        nuevo_archivo_local = None
         if f and f.filename:
             ext = f.filename.rsplit(".", 1)[1].lower() if "." in f.filename else ""
             if tipo == "foto" and ext not in EXTENSIONES_PERMITIDAS:
@@ -782,16 +803,49 @@ def archivos_portal_editar(id):
             if tipo in ("estatuto", "memoria_balance") and ext not in EXTENSIONES_DOCUMENTOS:
                 flash("Para documentos use formato PDF o Word.", "warning")
                 return redirect(url_for("admin.listar_archivos_portal"))
-            carpeta = DOCUMENTOS_UPLOAD_FOLDER if tipo in ("estatuto", "memoria_balance") else FOTOS_PORTAL_UPLOAD_FOLDER
-            os.makedirs(carpeta, exist_ok=True)
-            imagen_nombre = f"portal_{tipo}_{int(datetime.now().timestamp())}.{ext}"
-            f.save(os.path.join(carpeta, imagen_nombre))
-        db.session.execute(text("""
-            UPDATE archivos_portal
-            SET titulo = :titulo, descripcion = :descripcion, tipo = :tipo, archivo = :archivo, activa = :activa
-            WHERE id = :id;
-        """), {"titulo": titulo, "descripcion": descripcion, "tipo": tipo, "archivo": imagen_nombre, "activa": activa, "id": id})
-        db.session.commit()
+            f.seek(0, 2)
+            file_size = f.tell()
+            f.seek(0)
+            if file_size > 10 * 1024 * 1024:
+                flash("El archivo supera el límite de 10 MB.", "warning")
+                return redirect(url_for("admin.listar_archivos_portal"))
+
+        try:
+            if f and f.filename:
+                if tipo == "foto":
+                    nueva_ruta_storage = subir_foto_portal(f, f.filename)
+                    imagen_nombre = nueva_ruta_storage
+                else:
+                    os.makedirs(DOCUMENTOS_UPLOAD_FOLDER, exist_ok=True)
+                    imagen_nombre = f"portal_{tipo}_{int(datetime.now().timestamp())}.{ext}"
+                    nuevo_archivo_local = os.path.join(DOCUMENTOS_UPLOAD_FOLDER, imagen_nombre)
+                    f.save(nuevo_archivo_local)
+
+            db.session.execute(text("""
+                UPDATE archivos_portal
+                SET titulo = :titulo, descripcion = :descripcion, tipo = :tipo, archivo = :archivo, activa = :activa
+                WHERE id = :id;
+            """), {"titulo": titulo, "descripcion": descripcion, "tipo": tipo, "archivo": imagen_nombre, "activa": activa, "id": id})
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            if nuevo_archivo_local and os.path.exists(nuevo_archivo_local):
+                os.remove(nuevo_archivo_local)
+            if nueva_ruta_storage:
+                try:
+                    eliminar_foto_portal(nueva_ruta_storage)
+                except Exception:
+                    current_app.logger.exception("No se pudo limpiar una foto de Supabase Storage tras un error")
+            current_app.logger.exception("No se pudo actualizar el archivo del portal")
+            flash("No se pudo actualizar el archivo. Verifique los datos e inténtelo nuevamente.", "danger")
+            return redirect(url_for("admin.listar_archivos_portal"))
+
+        ruta_anterior = archivo.get("archivo")
+        if imagen_nombre != ruta_anterior and es_foto_en_storage(ruta_anterior):
+            try:
+                eliminar_foto_portal(ruta_anterior)
+            except Exception:
+                current_app.logger.exception("No se pudo eliminar la foto anterior de Supabase Storage")
         flash("Archivo actualizado correctamente.", "success")
         return redirect(url_for("admin.listar_archivos_portal"))
 

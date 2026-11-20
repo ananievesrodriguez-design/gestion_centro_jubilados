@@ -10,6 +10,11 @@
             <a href="{{ url_for('admin.configuracion') }}" class="btn btn-outline-secondary btn-sm">⚙️ Volver a Configuración</a>
         </div>
 
+        <div class="alert alert-info" role="status">
+            Las fotos nuevas se guardan en Supabase Storage. Para recuperar una foto antigua que no aparece en Render,
+            editá su registro y volvé a cargar el archivo original.
+        </div>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -55,7 +60,7 @@
                             <div class="form-text">
                                 <small>
                                     <strong>Estatuto / Memoria y Balance:</strong> PDF únicamente.<br>
-                                    <strong>Fotos:</strong> JPG, PNG, WEBP o SVG.
+                                    <strong>Fotos:</strong> JPG, PNG, WEBP o SVG. Se guardan en Supabase Storage para que persistan en Render.
                                 </small>
                             </div>
                         </div>

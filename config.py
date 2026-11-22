@@ -1,7 +1,7 @@
 import os
 import json
 from dotenv import load_dotenv
-from flask import session
+from flask import session, url_for
 from supabase import create_client, Client
 
 load_dotenv()
@@ -62,8 +62,24 @@ def documento_permitido(nombre):
 
 def inject_global_context():
     config = cargar_config()
+    logo_local = config.get("institucion", {}).get("logo")
+    logo_url = url_for("static", filename=f"img/{logo_local}") if logo_local else None
+    from sqlalchemy import text
+    from models import db
+    from portal_storage import url_publica_logo_institucional
+
+    logo_storage_path = db.session.execute(text("""
+        SELECT logo_storage_path
+        FROM configuracion_institucional
+        WHERE id = 1;
+    """)).scalar_one_or_none()
+    if logo_storage_path:
+        logo_url = url_publica_logo_institucional(logo_storage_path)
+
+    institucion = dict(config.get("institucion", {}))
+    institucion["logo_url"] = logo_url
     return {
-        "INSTITUCION": config.get("institucion", {}),
+        "INSTITUCION": institucion,
         "CONFIG": config,
         "current_user": session.get("user", None),
         "is_authenticated": bool(session.get("user")),

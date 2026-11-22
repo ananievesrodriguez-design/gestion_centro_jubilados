@@ -11,8 +11,8 @@
     <header class="portal-hero">
         <div class="portal-container portal-hero-inner">
             <div class="portal-brand">
-                {% if INSTITUCION.logo %}
-                    <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}"
+                {% if INSTITUCION.logo_url %}
+                    <img src="{{ INSTITUCION.logo_url }}"
                          alt="Logo de {{ INSTITUCION.nombre or 'Centro de Jubilados' }}" class="portal-logo">
                 {% else %}
                     <span class="portal-logo-placeholder" aria-hidden="true"><i class="fas fa-handshake"></i></span>

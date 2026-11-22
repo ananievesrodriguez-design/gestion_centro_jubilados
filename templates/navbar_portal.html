@@ -2,8 +2,8 @@
     <div class="container-fluid px-4">
         <!-- Logo e Institución -->
         <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white text-decoration-none" href="{{ url_for('socios.portal_socios') }}">
-            {% if INSTITUCION.logo %}
-                <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}"
+            {% if INSTITUCION.logo_url %}
+                <img src="{{ INSTITUCION.logo_url }}"
                      alt="Logo"
                      style="height: 40px; width: auto; max-width: 50px; object-fit: contain;"
                      class="bg-white rounded p-1 shadow-sm">

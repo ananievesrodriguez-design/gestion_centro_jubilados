@@ -83,9 +83,9 @@ El proceso encola los cumpleaños desde las 9:00 hora argentina y procesa hasta 
 
 ### Archivos subidos
 
-Las fotos nuevas de **Administración → Archivos del portal** se guardan en el bucket público `portal-media` de Supabase Storage; configurá `SUPABASE_SERVICE_ROLE_KEY` en Render para habilitar la carga y creá el bucket con acceso público de lectura. La clave administrativa se mantiene en el servidor. Los documentos siguen guardándose en `static/`, cuyo disco puede ser efímero en Render.
+Las fotos nuevas de **Administración → Archivos del portal** y el logo institucional se guardan en el bucket público `portal-media` de Supabase Storage; configurá `SUPABASE_SERVICE_ROLE_KEY` en Render para habilitar la carga y creá el bucket con acceso público de lectura. La ruta del logo se persiste en la tabla `configuracion_institucional`. La clave administrativa se mantiene en el servidor. Los documentos siguen guardándose en `static/`, cuyo disco puede ser efímero en Render.
 
-La columna `archivos_portal.archivo` contiene una ruta/nombre, no los bytes de la imagen. Las fotos que se cargaron antes de habilitar Storage deben volver a subirse desde **Editar archivo** para copiarlas al bucket; al hacerlo, el portal conservará el registro de la tabla y utilizará la imagen persistente.
+La columna `archivos_portal.archivo` contiene una ruta/nombre, no los bytes de la imagen. Las fotos que se cargaron antes de habilitar Storage deben volver a subirse desde **Editar archivo** para copiarlas al bucket. El logo debe volver a cargarse desde **Administración → Configuración** para persistirlo en Storage.
 
 ## Estructura principal
 

@@ -16,8 +16,8 @@
                     <div class="row align-items-center mb-4 p-3 bg-light rounded-3 border">
                         <div class="col-md-3 text-center mb-3 mb-md-0">
                             <label class="form-label fw-bold d-block text-secondary small">Logo Actual</label>
-                            {% if cfg.institucion.logo %}
-                                <img src="{{ url_for('static', filename='img/' + cfg.institucion.logo) }}"
+                            {% if INSTITUCION.logo_url %}
+                                <img src="{{ INSTITUCION.logo_url }}"
                                      alt="Logo Institucional"
                                      class="img-thumbnail shadow-sm bg-white"
                                      style="max-height: 95px; max-width: 150px; object-fit: contain;">
@@ -30,7 +30,7 @@
                         <div class="col-md-9">
                             <label for="logo" class="form-label fw-bold">Actualizar o Subir Logo</label>
                             <input class="form-control" type="file" id="logo" name="logo" accept="image/*">
-                            <small class="text-muted">Formatos admitidos: PNG, JPG, JPEG, WEBP o SVG. Se utilizará en el membrete de recibos, fichas y reportes.</small>
+                            <small class="text-muted">Formatos admitidos: PNG, JPG, JPEG, WEBP o SVG. Se guarda en Supabase Storage para que permanezca disponible en Render. Máximo 10 MB.</small>
                         </div>
                     </div>
 

@@ -215,6 +215,20 @@ def create_app():
             raise
 
         try:
+            db.session.execute(text("""
+                CREATE TABLE IF NOT EXISTS configuracion_institucional (
+                    id SMALLINT PRIMARY KEY CHECK (id = 1),
+                    logo_storage_path VARCHAR(255),
+                    actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("No se pudo inicializar la configuración institucional persistente")
+            raise
+
+        try:
             inicializar_valores_cuota(cargar_config())
             db.session.commit()
         except Exception:

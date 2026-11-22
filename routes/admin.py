@@ -5,7 +5,7 @@ import os
 from datetime import date, datetime
 from auth_manager import admin_required, login_required
 from config import (
-    UPLOAD_FOLDER, NOVEDADES_UPLOAD_FOLDER, DOCUMENTOS_UPLOAD_FOLDER,
+    NOVEDADES_UPLOAD_FOLDER, DOCUMENTOS_UPLOAD_FOLDER,
     EXTENSIONES_PERMITIDAS, EXTENSIONES_DOCUMENTOS, cargar_config, guardar_config,
     archivo_permitido, documento_permitido, WHATSAPP_NEWS_TEMPLATE,
 )
@@ -14,7 +14,10 @@ from cuotas_config import (
     guardar_valores_cuota, obtener_valores_cuota, parsear_valores_cuota,
 )
 from comision_directiva import CARGOS_COMISION, CARGOS_COMISION_EXCLUSIVOS
-from portal_storage import eliminar_foto_portal, es_foto_en_storage, subir_foto_portal
+from portal_storage import (
+    eliminar_foto_portal, eliminar_logo_institucional, es_foto_en_storage,
+    es_logo_en_storage, subir_foto_portal, subir_logo_institucional,
+)
 from whatsapp_service import whatsapp_template_configured
 
 admin_bp = Blueprint("admin", __name__)
@@ -446,14 +449,39 @@ def configuracion():
                 valores_cuota=obtener_valores_cuota(),
             )
 
+        nuevo_logo_storage = None
+        logo_anterior_storage = None
         if "logo" in request.files:
             archivo = request.files["logo"]
-            if archivo and archivo.filename != "" and archivo_permitido(archivo.filename):
-                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-                ext = archivo.filename.rsplit(".", 1)[1].lower()
-                nombre_archivo = f"logo_institucional.{ext}"
-                archivo.save(os.path.join(UPLOAD_FOLDER, nombre_archivo))
-                config["institucion"]["logo"] = nombre_archivo
+            if archivo and archivo.filename:
+                if not archivo_permitido(archivo.filename):
+                    flash("El logo debe ser PNG, JPG, JPEG, WEBP o SVG.", "warning")
+                    return render_template(
+                        "configuracion.html",
+                        cfg=config,
+                        valores_cuota=obtener_valores_cuota(),
+                    )
+                archivo.seek(0, 2)
+                tamano_logo = archivo.tell()
+                archivo.seek(0)
+                if tamano_logo > 10 * 1024 * 1024:
+                    flash("El logo supera el límite de 10 MB.", "warning")
+                    return render_template(
+                        "configuracion.html",
+                        cfg=config,
+                        valores_cuota=obtener_valores_cuota(),
+                    )
+                logo_anterior_storage = db.session.execute(text("""
+                    SELECT logo_storage_path
+                    FROM configuracion_institucional
+                    WHERE id = 1;
+                """)).scalar_one_or_none()
+                try:
+                    nuevo_logo_storage = subir_logo_institucional(archivo, archivo.filename)
+                except Exception:
+                    current_app.logger.exception("No se pudo subir el logo institucional a Supabase Storage")
+                    flash("No se pudo subir el logo. Verificá la configuración de Supabase Storage e inténtalo nuevamente.", "danger")
+                    return redirect(url_for("admin.configuracion"))
 
         config["institucion"]["nombre"] = request.form.get("nombre", "").strip()
         config["institucion"]["subtitulo"] = request.form.get("subtitulo", "").strip()
@@ -477,12 +505,30 @@ def configuracion():
         try:
             guardar_valores_cuota(valores_cuota)
             guardar_config(config)
+            if nuevo_logo_storage:
+                db.session.execute(text("""
+                    INSERT INTO configuracion_institucional (id, logo_storage_path, actualizado_en)
+                    VALUES (1, :logo_storage_path, NOW())
+                    ON CONFLICT (id) DO UPDATE
+                    SET logo_storage_path = EXCLUDED.logo_storage_path,
+                        actualizado_en = NOW();
+                """), {"logo_storage_path": nuevo_logo_storage})
             db.session.commit()
         except Exception:
             db.session.rollback()
+            if nuevo_logo_storage:
+                try:
+                    eliminar_logo_institucional(nuevo_logo_storage)
+                except Exception:
+                    current_app.logger.exception("No se pudo limpiar un logo de Supabase Storage tras un error")
             current_app.logger.exception("No se pudo guardar la configuración institucional")
             flash("No se pudieron guardar los parámetros. Inténtelo nuevamente.", "danger")
             return redirect(url_for("admin.configuracion"))
+        if nuevo_logo_storage and es_logo_en_storage(logo_anterior_storage):
+            try:
+                eliminar_logo_institucional(logo_anterior_storage)
+            except Exception:
+                current_app.logger.exception("No se pudo eliminar el logo institucional anterior")
         flash("Parámetros actualizados correctamente.", "success")
         return redirect(url_for("admin.configuracion"))
 

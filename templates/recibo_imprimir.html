@@ -98,8 +98,8 @@
         <!-- Encabezado Institucional -->
         <div class="row align-items-center pb-2 mb-3 border-bottom">
             <div class="col-2 text-center">
-                {% if INSTITUCION.logo %}
-                    <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}" 
+                {% if INSTITUCION.logo_url %}
+                    <img src="{{ INSTITUCION.logo_url }}"
                          alt="Logo" style="max-height: 65px; max-width: 100%; object-fit: contain;">
                 {% else %}
                     <span class="fs-1">🏛️</span>

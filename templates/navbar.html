@@ -2,8 +2,8 @@
     <div class="container-fluid px-3 px-lg-4">
         <a class="navbar-brand d-flex align-items-center gap-2"
            href="{{ url_for('socios.inicio_cobrador') if current_user and current_user.role == 'cobrador' else url_for('socios.listar_socios') }}">
-            {% if INSTITUCION.logo %}
-                <img src="{{ url_for('static', filename='img/' + INSTITUCION.logo) }}"
+            {% if INSTITUCION.logo_url %}
+                <img src="{{ INSTITUCION.logo_url }}"
                      alt="" class="navbar-logo">
             {% else %}
                 <span class="navbar-logo-placeholder" aria-hidden="true">

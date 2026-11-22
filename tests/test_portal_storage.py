@@ -63,7 +63,7 @@ class PortalStorageTests(unittest.TestCase):
         supabase_admin.storage.from_.return_value.upload.assert_called_once()
         args, kwargs = supabase_admin.storage.from_.return_value.upload.call_args
         self.assertEqual(args[0], ruta)
-        self.assertEqual(args[1].read(), b"image-bytes")
+        self.assertEqual(args[1], b"image-bytes")
         self.assertEqual(args[2]["content-type"], "image/jpeg")
 
     @patch("portal_storage.supabase_admin")

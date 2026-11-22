@@ -25,9 +25,10 @@ def _subir_imagen_storage(archivo, nombre_original, carpeta):
     ruta_storage = f"{carpeta}/{uuid4().hex}.{extension}"
     content_type = archivo.mimetype or mimetypes.guess_type(nombre_original)[0] or "application/octet-stream"
     archivo.stream.seek(0)
+    contenido = archivo.stream.read()
     supabase_admin.storage.from_(SUPABASE_PORTAL_BUCKET).upload(
         ruta_storage,
-        archivo.stream,
+        contenido,
         {"content-type": content_type, "upsert": "false"},
     )
     return ruta_storage

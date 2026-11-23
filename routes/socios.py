@@ -16,7 +16,8 @@ from config import (
     DOCUMENTOS_UPLOAD_FOLDER, FOTOS_PORTAL_UPLOAD_FOLDER, cargar_config,
 )
 from portal_storage import (
-    descargar_foto_portal, es_foto_en_storage, url_publica_foto_portal,
+    descargar_foto_portal, es_foto_en_storage, es_imagen_novedad_en_storage,
+    url_publica_foto_portal, url_publica_imagen_novedad,
 )
 
 socios_bp = Blueprint("socios", __name__)
@@ -699,7 +700,6 @@ def _generar_pdf_historial_cuotas(cuotas, cobrador_seleccionado):
 def portal_socios():
     socio_encontrado = None
     cuotas_socio = []
-    ultimo_pago = None
     busqueda_realizada = False
     termino_busqueda = ""
     es_cumpleanos_hoy = False
@@ -724,7 +724,15 @@ def portal_socios():
         ORDER BY orden DESC, fecha_publicacion DESC
         LIMIT 6;
     """
-    novedades = db.session.execute(text(sql_novedades)).mappings().all()
+    novedades = [
+        dict(novedad, imagen_url=(
+            url_publica_imagen_novedad(novedad["imagen"])
+            if es_imagen_novedad_en_storage(novedad["imagen"])
+            else url_for("static", filename="img/novedades/" + novedad["imagen"])
+            if novedad["imagen"] else None
+        ))
+        for novedad in db.session.execute(text(sql_novedades)).mappings().all()
+    ]
 
     sql_cumple_hoy = """
         SELECT id, nro_socio, apellido, nombre, dni, telefono, fecha_nacimiento
@@ -797,21 +805,18 @@ def portal_socios():
                         pass
 
                 sql_pagos = """
-                    SELECT id, fecha_cobro, periodo, anio, monto, nro_recibo AS comprobante, metodo_pago
+                    SELECT fecha_cobro, periodo, anio, monto, nro_recibo AS comprobante
                     FROM cobro_cuotas
                     WHERE socio_id = :socio_id
                     ORDER BY fecha_cobro DESC, id DESC
                     LIMIT 5;
                 """
                 cuotas_socio = db.session.execute(text(sql_pagos), {"socio_id": socio_encontrado["id"]}).mappings().all()
-                if cuotas_socio:
-                    ultimo_pago = cuotas_socio[0]
 
     return render_template(
         "portal_socios.html",
         socio=socio_encontrado,
         cuotas=cuotas_socio,
-        ultimo_pago=ultimo_pago,
         busqueda_realizada=busqueda_realizada,
         termino=termino_busqueda,
         es_cumpleanos_hoy=es_cumpleanos_hoy,

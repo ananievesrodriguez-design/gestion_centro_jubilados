@@ -17,6 +17,10 @@ def es_logo_en_storage(archivo):
     return isinstance(archivo, str) and archivo.startswith("logos/") and ".." not in archivo
 
 
+def es_imagen_novedad_en_storage(archivo):
+    return isinstance(archivo, str) and archivo.startswith("novedades/") and ".." not in archivo
+
+
 def _subir_imagen_storage(archivo, nombre_original, carpeta):
     if not SUPABASE_SERVICE_ROLE_KEY:
         raise RuntimeError("Configure SUPABASE_SERVICE_ROLE_KEY para subir imágenes institucionales.")
@@ -40,6 +44,23 @@ def subir_foto_portal(archivo, nombre_original):
 
 def subir_logo_institucional(archivo, nombre_original):
     return _subir_imagen_storage(archivo, nombre_original, "logos")
+
+
+def subir_imagen_novedad(archivo, nombre_original):
+    return _subir_imagen_storage(archivo, nombre_original, "novedades")
+
+
+def url_publica_imagen_novedad(ruta_storage):
+    if not es_imagen_novedad_en_storage(ruta_storage):
+        raise ValueError("La ruta no corresponde a una imagen de novedades.")
+    return supabase.storage.from_(SUPABASE_PORTAL_BUCKET).get_public_url(ruta_storage)
+
+
+def eliminar_imagen_novedad(ruta_storage):
+    if not SUPABASE_SERVICE_ROLE_KEY:
+        raise RuntimeError("Configure SUPABASE_SERVICE_ROLE_KEY para eliminar imágenes de novedades.")
+    if es_imagen_novedad_en_storage(ruta_storage):
+        supabase_admin.storage.from_(SUPABASE_PORTAL_BUCKET).remove([ruta_storage])
 
 
 def url_publica_foto_portal(ruta_storage):

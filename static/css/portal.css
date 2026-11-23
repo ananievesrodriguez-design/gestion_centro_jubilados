@@ -95,10 +95,10 @@
 
 .portal-eyebrow {
     margin: 0 0 0.35rem;
-    color: #668095;
-    font-size: 0.72rem;
+    color: #526b7d;
+    font-size: 0.82rem;
     font-weight: 800;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
 }
 
@@ -178,43 +178,6 @@
     background: #e7f2f1;
     color: var(--portal-teal);
     font-size: 1.45rem;
-}
-
-.portal-shortcuts {
-    display: flex;
-    overflow-x: auto;
-    gap: 0.45rem;
-    margin-bottom: 1.6rem;
-    padding: 0.4rem;
-    border: 1px solid #e4ebef;
-    border-radius: 14px;
-    background: #fff;
-    scrollbar-width: thin;
-}
-
-.portal-shortcuts a {
-    display: inline-flex;
-    min-height: 42px;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.55rem 0.85rem;
-    border-radius: 10px;
-    color: #3d586c;
-    font-size: 0.9rem;
-    font-weight: 700;
-    text-decoration: none;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.portal-shortcuts a i {
-    color: var(--portal-teal);
-}
-
-.portal-shortcuts a:hover,
-.portal-shortcuts a:focus-visible {
-    background: var(--portal-soft);
-    color: var(--portal-primary-dark);
 }
 
 .portal-page .card-amigable {
@@ -303,9 +266,19 @@
     font-size: 1.1rem;
 }
 
-.portal-page .collapse .card {
-    border: 1px solid #dce7ec !important;
-    box-shadow: 0 10px 28px rgba(24, 53, 77, 0.07);
+.portal-consulta-instrucciones {
+    color: var(--portal-muted);
+    font-size: 1.05rem;
+}
+
+.portal-consulta-form {
+    max-width: 560px;
+    margin-inline: auto;
+}
+
+.portal-page :focus-visible {
+    outline: 3px solid #e3a72f;
+    outline-offset: 3px;
 }
 
 .portal-section {
@@ -468,18 +441,12 @@
     }
 
     .portal-admin-button {
-        width: 42px;
-        min-width: 42px;
-        padding: 0;
-        font-size: 1rem;
+        min-height: 48px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.85rem;
     }
 
     .portal-admin-button span {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
         white-space: nowrap;
     }
 
@@ -495,23 +462,13 @@
     }
 
     .portal-welcome > div:first-child > p:last-child {
-        font-size: 0.94rem;
+        font-size: 1rem;
     }
 
     .portal-page .card-body {
         padding: 1.15rem;
     }
 
-    .portal-page .input-group {
-        flex-direction: column;
-        gap: 0.65rem;
-    }
-
-    .portal-page .input-group > .form-control,
-    .portal-page .input-group > .btn {
-        width: 100%;
-        border-radius: 11px !important;
-    }
 }
 
 @media (max-width: 575.98px) {
@@ -545,19 +502,19 @@
     }
 
     .portal-brand .portal-eyebrow {
-        font-size: 0.58rem;
+        font-size: 0.7rem;
         letter-spacing: 0.08em;
     }
 
     .portal-location {
-        font-size: 0.76rem;
+        font-size: 0.9rem;
         line-height: 1.35;
     }
 
     .portal-admin-button {
-        width: 44px;
-        min-width: 44px;
-        min-height: 44px;
+        gap: 0.4rem;
+        padding-inline: 0.55rem;
+        font-size: 0.9rem;
     }
 
     .portal-welcome {
@@ -576,28 +533,24 @@
         flex-basis: 40px;
     }
 
-    .portal-shortcuts {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        overflow: visible;
-        gap: 0.2rem;
-        padding: 0.35rem;
+    .portal-page {
+        font-size: 1.125rem;
+        line-height: 1.6;
     }
 
-    .portal-shortcuts a {
-        min-width: 0;
-        min-height: 48px;
-        justify-content: flex-start;
-        gap: 0.4rem;
-        padding: 0.55rem 0.45rem;
-        font-size: 0.85rem;
-        line-height: 1.2;
-        white-space: normal;
+    .portal-page .small {
+        font-size: 1rem !important;
     }
 
-    .portal-shortcuts a i {
-        flex: 0 0 1rem;
-        text-align: center;
+    .portal-page .btn-grande,
+    .portal-page .form-control,
+    .portal-page .form-select {
+        min-height: 56px;
+        font-size: 1.05rem;
+    }
+
+    .portal-page .btn-grande {
+        line-height: 1.3;
     }
 
     .portal-page #seccionNovedades > .d-flex,
@@ -662,7 +615,7 @@
     .portal-page .table tbody td::before {
         color: #51677a;
         content: attr(data-label);
-        font-size: 0.75rem;
+        font-size: 0.9rem;
         font-weight: 800;
         letter-spacing: 0.02em;
         text-transform: uppercase;
@@ -675,5 +628,13 @@
     .portal-page *::after {
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+
+    .portal-page .card-amigable:hover,
+    .portal-page .novedad-card:hover,
+    .portal-admin-button:hover {
+        transform: none;
     }
 }

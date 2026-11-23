@@ -5,7 +5,7 @@ import os
 from datetime import date, datetime
 from auth_manager import admin_required, login_required
 from config import (
-    NOVEDADES_UPLOAD_FOLDER, DOCUMENTOS_UPLOAD_FOLDER,
+    DOCUMENTOS_UPLOAD_FOLDER,
     EXTENSIONES_PERMITIDAS, EXTENSIONES_DOCUMENTOS, cargar_config, guardar_config,
     archivo_permitido, documento_permitido, WHATSAPP_NEWS_TEMPLATE,
 )
@@ -15,8 +15,10 @@ from cuotas_config import (
 )
 from comision_directiva import CARGOS_COMISION, CARGOS_COMISION_EXCLUSIVOS
 from portal_storage import (
-    eliminar_foto_portal, eliminar_logo_institucional, es_foto_en_storage,
-    es_logo_en_storage, subir_foto_portal, subir_logo_institucional,
+    eliminar_foto_portal, eliminar_imagen_novedad, eliminar_logo_institucional,
+    es_foto_en_storage, es_imagen_novedad_en_storage, es_logo_en_storage,
+    subir_foto_portal, subir_imagen_novedad, subir_logo_institucional,
+    url_publica_imagen_novedad,
 )
 from whatsapp_service import whatsapp_template_configured
 
@@ -78,6 +80,18 @@ def _datos_formulario_comision(excluir_id=None):
         "fecha_inicio": fecha_inicio,
         "fecha_fin": fecha_fin,
     }
+
+
+def _subir_imagen_novedad(archivo):
+    extension = archivo.filename.rsplit(".", 1)[1].lower() if "." in archivo.filename else ""
+    if extension not in EXTENSIONES_PERMITIDAS:
+        raise ValueError("Para las imágenes use formatos JPG, PNG, WEBP o SVG.")
+    archivo.seek(0, 2)
+    tamano = archivo.tell()
+    archivo.seek(0)
+    if tamano > 10 * 1024 * 1024:
+        raise ValueError("La imagen supera el límite de 10 MB.")
+    return subir_imagen_novedad(archivo, archivo.filename)
 
 
 @admin_bp.route("/comision-directiva", methods=["GET"])
@@ -554,7 +568,15 @@ def listar_novedades():
         FROM novedades n
         ORDER BY orden DESC, fecha_publicacion DESC;
     """
-    novedades = db.session.execute(text(sql)).mappings().all()
+    novedades = [
+        dict(novedad, imagen_url=(
+            url_publica_imagen_novedad(novedad["imagen"])
+            if es_imagen_novedad_en_storage(novedad["imagen"])
+            else url_for("static", filename="img/novedades/" + novedad["imagen"])
+            if novedad["imagen"] else None
+        ))
+        for novedad in db.session.execute(text(sql)).mappings().all()
+    ]
     return render_template(
         "novedades_listar.html",
         novedades=novedades,
@@ -593,24 +615,41 @@ def novedades_nueva():
     orden = int(request.form.get("orden", "0") or 0)
     imagen_nombre = None
 
-    if "imagen" in request.files:
-        archivo = request.files["imagen"]
-        if archivo and archivo.filename != "" and archivo_permitido(archivo.filename):
-            os.makedirs(NOVEDADES_UPLOAD_FOLDER, exist_ok=True)
-            ext = archivo.filename.rsplit(".", 1)[1].lower()
-            nombre_archivo = f"novedad_{int(datetime.now().timestamp())}.{ext}"
-            archivo.save(os.path.join(NOVEDADES_UPLOAD_FOLDER, nombre_archivo))
-            imagen_nombre = nombre_archivo
-
     if not titulo:
         flash("El título es obligatorio.", "warning")
         return redirect(url_for("admin.listar_novedades"))
 
-    db.session.execute(text("""
-        INSERT INTO novedades (titulo, contenido, activa, orden, imagen, fecha_publicacion)
-        VALUES (:titulo, :contenido, :activa, :orden, :imagen, NOW());
-    """), {"titulo": titulo, "contenido": contenido, "activa": activa, "orden": orden, "imagen": imagen_nombre})
-    db.session.commit()
+    archivo = request.files.get("imagen")
+    ruta_storage = None
+    try:
+        if archivo and archivo.filename:
+            ruta_storage = _subir_imagen_novedad(archivo)
+            imagen_nombre = ruta_storage
+    except ValueError as error:
+        flash(str(error), "warning")
+        return redirect(url_for("admin.listar_novedades"))
+    except Exception:
+        current_app.logger.exception("No se pudo subir la imagen de la novedad")
+        flash("No se pudo subir la imagen. Verifique la configuración de Supabase Storage e inténtelo nuevamente.", "danger")
+        return redirect(url_for("admin.listar_novedades"))
+
+    try:
+        db.session.execute(text("""
+            INSERT INTO novedades (titulo, contenido, activa, orden, imagen, fecha_publicacion)
+            VALUES (:titulo, :contenido, :activa, :orden, :imagen, NOW());
+        """), {"titulo": titulo, "contenido": contenido, "activa": activa, "orden": orden, "imagen": imagen_nombre})
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        if ruta_storage:
+            try:
+                eliminar_imagen_novedad(ruta_storage)
+            except Exception:
+                current_app.logger.exception("No se pudo limpiar una imagen de novedad tras un error")
+        current_app.logger.exception("No se pudo guardar la novedad")
+        flash("No se pudo guardar la novedad. Verifique la imagen e inténtelo nuevamente.", "danger")
+        return redirect(url_for("admin.listar_novedades"))
+
     flash("Novedad creada correctamente.", "success")
     return redirect(url_for("admin.listar_novedades"))
 
@@ -690,29 +729,60 @@ def novedades_editar(id):
         flash("El título es obligatorio.", "warning")
         return redirect(url_for("admin.listar_novedades"))
 
-    imagen_nombre = None
-    if "imagen" in request.files:
-        archivo = request.files["imagen"]
-        if archivo and archivo.filename != "" and archivo_permitido(archivo.filename):
-            os.makedirs(NOVEDADES_UPLOAD_FOLDER, exist_ok=True)
-            ext = archivo.filename.rsplit(".", 1)[1].lower()
-            nombre_archivo = f"novedad_{int(datetime.now().timestamp())}.{ext}"
-            archivo.save(os.path.join(NOVEDADES_UPLOAD_FOLDER, nombre_archivo))
-            imagen_nombre = nombre_archivo
+    novedad = db.session.execute(
+        text("SELECT imagen FROM novedades WHERE id = :id;"),
+        {"id": id},
+    ).mappings().first()
+    if not novedad:
+        flash("Novedad no encontrada.", "warning")
+        return redirect(url_for("admin.listar_novedades"))
 
-    if imagen_nombre:
+    archivo = request.files.get("imagen")
+    ruta_storage = None
+    try:
+        if archivo and archivo.filename:
+            ruta_storage = _subir_imagen_novedad(archivo)
+    except ValueError as error:
+        flash(str(error), "warning")
+        return redirect(url_for("admin.listar_novedades"))
+    except Exception:
+        current_app.logger.exception("No se pudo subir la imagen de la novedad editada")
+        flash("No se pudo subir la imagen. Verifique la configuración de Supabase Storage e inténtelo nuevamente.", "danger")
+        return redirect(url_for("admin.listar_novedades"))
+
+    try:
         db.session.execute(text("""
             UPDATE novedades
-            SET titulo = :titulo, contenido = :contenido, activa = :activa, orden = :orden, imagen = :imagen
+            SET titulo = :titulo, contenido = :contenido, activa = :activa, orden = :orden,
+                imagen = COALESCE(:imagen, imagen)
             WHERE id = :id;
-        """), {"titulo": titulo, "contenido": contenido, "activa": activa, "orden": orden, "imagen": imagen_nombre, "id": id})
-    else:
-        db.session.execute(text("""
-            UPDATE novedades
-            SET titulo = :titulo, contenido = :contenido, activa = :activa, orden = :orden
-            WHERE id = :id;
-        """), {"titulo": titulo, "contenido": contenido, "activa": activa, "orden": orden, "id": id})
-    db.session.commit()
+        """), {
+            "titulo": titulo,
+            "contenido": contenido,
+            "activa": activa,
+            "orden": orden,
+            "imagen": ruta_storage,
+            "id": id,
+        })
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        if ruta_storage:
+            try:
+                eliminar_imagen_novedad(ruta_storage)
+            except Exception:
+                current_app.logger.exception("No se pudo limpiar una imagen de novedad tras un error")
+        current_app.logger.exception("No se pudo actualizar la novedad")
+        flash("No se pudo actualizar la novedad. Verifique la imagen e inténtelo nuevamente.", "danger")
+        return redirect(url_for("admin.listar_novedades"))
+
+    imagen_anterior = novedad["imagen"]
+    if ruta_storage and es_imagen_novedad_en_storage(imagen_anterior):
+        try:
+            eliminar_imagen_novedad(imagen_anterior)
+        except Exception:
+            current_app.logger.exception("No se pudo eliminar la imagen anterior de la novedad")
+
     flash("Novedad actualizada correctamente.", "success")
     return redirect(url_for("admin.listar_novedades"))
 

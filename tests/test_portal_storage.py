@@ -47,6 +47,11 @@ class PortalStorageTests(unittest.TestCase):
         self.assertFalse(portal_storage.es_logo_en_storage("logo_institucional.png"))
         self.assertFalse(portal_storage.es_logo_en_storage("logos/../private.png"))
 
+    def test_recognizes_only_storage_news_image_paths(self):
+        self.assertTrue(portal_storage.es_imagen_novedad_en_storage("novedades/abc123.jpg"))
+        self.assertFalse(portal_storage.es_imagen_novedad_en_storage("noticia.jpg"))
+        self.assertFalse(portal_storage.es_imagen_novedad_en_storage("novedades/../private.jpg"))
+
     @patch("portal_storage.supabase_admin")
     @patch("portal_storage.SUPABASE_SERVICE_ROLE_KEY", "server-key")
     def test_uploads_photo_to_persistent_bucket(self, supabase_admin):
@@ -79,6 +84,34 @@ class PortalStorageTests(unittest.TestCase):
 
         self.assertRegex(ruta, r"^logos/[0-9a-f]{32}\.png$")
         supabase_admin.storage.from_.return_value.upload.assert_called_once()
+
+    @patch("portal_storage.supabase_admin")
+    @patch("portal_storage.SUPABASE_SERVICE_ROLE_KEY", "server-key")
+    def test_uploads_news_image_under_news_prefix(self, supabase_admin):
+        archivo = FileStorage(
+            stream=BytesIO(b"news-image"),
+            filename="noticia.webp",
+            content_type="image/webp",
+        )
+
+        ruta = portal_storage.subir_imagen_novedad(archivo, archivo.filename)
+
+        self.assertRegex(ruta, r"^novedades/[0-9a-f]{32}\.webp$")
+        args, _ = supabase_admin.storage.from_.return_value.upload.call_args
+        self.assertEqual(args[0], ruta)
+        self.assertEqual(args[1], b"news-image")
+        self.assertEqual(args[2]["content-type"], "image/webp")
+
+    @patch("portal_storage.supabase")
+    def test_builds_public_url_for_news_image(self, supabase):
+        portal_storage.url_publica_imagen_novedad("novedades/abc123.jpg")
+
+        supabase.storage.from_.assert_called_once_with(portal_storage.SUPABASE_PORTAL_BUCKET)
+        supabase.storage.from_.return_value.get_public_url.assert_called_once_with("novedades/abc123.jpg")
+
+    def test_rejects_non_news_storage_paths_for_public_url(self):
+        with self.assertRaisesRegex(ValueError, "imagen de novedades"):
+            portal_storage.url_publica_imagen_novedad("fotos/abc123.jpg")
 
     @patch("portal_storage.SUPABASE_SERVICE_ROLE_KEY", "")
     def test_requires_service_key_to_upload(self):

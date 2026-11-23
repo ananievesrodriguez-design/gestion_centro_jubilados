@@ -40,21 +40,10 @@
             <div>
                 <p class="portal-eyebrow text-uppercase">Estamos para acompañarte</p>
                 <h2 id="portalWelcomeTitle">Bienvenido/a al Portal del Socio</h2>
-                <p>Consultá tus cuotas, recibos, novedades y actividades del centro en un solo lugar.</p>
+                <p>Encontrá los avisos del Centro y consultá tus cuotas en forma sencilla.</p>
             </div>
             <div class="portal-welcome-mark" aria-hidden="true"><i class="fas fa-heart"></i></div>
         </section>
-
-        <nav class="portal-shortcuts" aria-label="Accesos rápidos">
-            <a href="#seccionCumpleHoy"><i class="fas fa-cake-candles" aria-hidden="true"></i> Cumpleaños</a>
-            <a href="#seccionNovedades"><i class="fas fa-bullhorn" aria-hidden="true"></i> Novedades</a>
-            <a href="#seccionConsulta" data-bs-toggle="collapse" aria-controls="seccionConsulta">
-                <i class="fas fa-receipt" aria-hidden="true"></i> Mis cuotas
-            </a>
-            <a href="#seccionDocumentos"><i class="fas fa-folder-open" aria-hidden="true"></i> Documentos</a>
-            <a href="#seccionFotos"><i class="fas fa-images" aria-hidden="true"></i> Galería</a>
-            <a href="#seccionAutoridades"><i class="fas fa-users" aria-hidden="true"></i> Autoridades</a>
-        </nav>
 
         <!-- SECCIÓN: CUMPLEAÑOS DEL DÍA -->
         <div id="seccionCumpleHoy" class="portal-section mb-4">
@@ -112,7 +101,7 @@
                     <div class="col-md-6 col-lg-4">
                         <div class="card novedad-card h-100 p-3">
                             {% if n.imagen %}
-                                <img src="{{ url_for('static', filename='img/novedades/' + n.imagen) }}" class="img-fluid-novedad mb-3" alt="{{ n.titulo }}">
+                                <img src="{{ n.imagen_url }}" class="img-fluid-novedad mb-3" alt="{{ n.titulo }}">
                             {% else %}
                                 <div class="bg-light d-flex align-items-center justify-content-center rounded-3 mb-3" style="height: 160px; border: 1px dashed #ddd;">
                                     <span class="text-muted small">Sin imagen</span>
@@ -136,127 +125,25 @@
             {% endif %}
         </div>
 
-        <section class="portal-section mb-4" aria-labelledby="informacionUtilTitle">
-            <div class="portal-section-heading mb-3">
-                <div>
-                    <p class="portal-eyebrow">Te esperamos</p>
-                    <h3 id="informacionUtilTitle">Información útil</h3>
-                </div>
-            </div>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="card card-amigable h-100">
-                        <div class="card-body d-flex align-items-start gap-3">
-                            <i class="fas fa-clock portal-section-icon portal-section-icon-warm" aria-hidden="true"></i>
-                            <div>
-                                <h4 class="h6 fw-bold">Horario de atención</h4>
-                                <p class="text-muted mb-0">Lunes a Viernes en la sede social para cobro de cuotas y trámites.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card card-amigable h-100">
-                        <div class="card-body d-flex align-items-start gap-3">
-                            <i class="fas fa-location-dot portal-section-icon" aria-hidden="true"></i>
-                            <div>
-                                <h4 class="h6 fw-bold">Sede social</h4>
-                                <p class="text-muted mb-0">{{ INSTITUCION.direccion or 'Consultá en secretaría' }} — {{ INSTITUCION.ciudad_provincia or '' }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    <!-- Fila de tarjetas de acceso rápido (para adultos mayores) -->
-    <div class="row g-3 mb-4">
-        <!-- Tarjeta: Consultar mis cuotas -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card card-amigable bg-white h-100">
-                <div class="card-body text-center p-3">
-                    <div class="icono-grande text-primary">📋</div>
-                    <h5 class="fw-bold text-dark mb-2">Consultar mis cuotas</h5>
-                    <p class="text-muted small mb-3">Ingresá tu DNI o N° de socio para ver tu estado y pagos.</p>
-                    <button type="button" class="btn btn-primary btn-grande w-100" data-bs-toggle="collapse" data-bs-target="#seccionConsulta">
-                        🔍 Buscar
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- Tarjeta: Último recibo -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card card-amigable bg-white h-100">
-                <div class="card-body text-center p-3">
-                    <div class="icono-grande text-success">📄</div>
-                    <h5 class="fw-bold text-dark mb-2">Ver mi último recibo</h5>
-                    <p class="text-muted small mb-3">Descargá el comprobante de tu último pago.</p>
-                    {% if ultimo_pago %}
-                        <a href="{{ url_for('socios.imprimir_recibo',  cuota_id=ultimo_pago.id) }}" target="_blank" class="btn btn-success btn-grande w-100">
-                            📥 Descargar PDF
-                        </a>
-                    {% else %}
-                        <button class="btn btn-outline-secondary btn-grande w-100" disabled>
-                            📥 Sin recibos
-                        </button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <!-- Tarjeta: Novedades -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card card-amigable bg-white h-100">
-                <div class="card-body text-center p-3">
-                    <div class="icono-grande text-info">📢</div>
-                    <h5 class="fw-bold text-dark mb-2">Novedades del Centro</h5>
-                    <p class="text-muted small mb-3">Enterate de los avisos y comunicados recientes.</p>
-                    {% if novedades %}
-                        <a href="{{ url_for('socios.portal_socios') }}#seccionNovedades" class="btn btn-info btn-grande w-100">
-                            Ver Novedades
-                        </a>
-                    {% else %}
-                        <button class="btn btn-outline-secondary btn-grande w-100" disabled>
-                            Sin novedades
-                        </button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <!-- Tarjeta: Cumpleaños del día -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card card-amigable bg-white h-100">
-                <div class="card-body text-center p-3">
-                    <div class="icono-grande text-warning">🎂</div>
-                    <h5 class="fw-bold text-dark mb-2">Cumpleaños de Hoy</h5>
-                    <p class="text-muted small mb-3">{{ cumple_hoy|length }} socio{% if cumple_hoy|length != 1 %}s{% endif %} celebran hoy.</p>
-                    {% if cumple_hoy %}
-                        <a href="{{ url_for('socios.portal_socios') }}#seccionCumpleHoy" class="btn btn-warning btn-grande w-100 text-dark">
-                            Ver Listado
-                        </a>
-                    {% else %}
-                        <button class="btn btn-outline-secondary btn-grande w-100" disabled>
-                            Sin cumpleaños
-                        </button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- SECCIÓN: Consulta de Cuotas -->
-    <div id="seccionConsulta" class="collapse mt-4 {% if busqueda_realizada %}show{% endif %}">
+    <section id="seccionConsulta" class="portal-section portal-consulta mb-4" aria-labelledby="consultaTitle">
         <div class="card card-amigable border-0 bg-white p-4 mb-4">
             <div class="text-center mb-3">
-                <h4 class="fw-bold text-dark mb-1">Consulta de Estado y Cuotas</h4>
-                <p class="text-secondary small mb-0">Ingresá tu número de documento o N° de socio para consultar tu estado</p>
+                <h3 id="consultaTitle" class="fw-bold text-dark mb-2">Consulta de Estado y cuotas</h3>
+                <p id="consultaInstructions" class="portal-consulta-instrucciones mb-0">
+                    Escribí tu DNI o número de socio en el recuadro y tocá «Consultar».
+                </p>
             </div>
 
-            <form method="POST" action="{{ url_for('socios.portal_socios') }}" class="mt-2">
-                <div class="input-group">
-                    <input type="text" name="criterio" class="form-control input-grande text-center fw-bold"
-                           placeholder="Ingrese su DNI o N° de Socio" value="{{ termino }}" required autofocus>
-                    <button class="btn btn-primary btn-grande fw-bold px-4" type="submit">
-                        🔍 Consultar
+            <form role="search" aria-label="Consulta de cuotas" method="POST"
+                  action="{{ url_for('socios.portal_socios') }}#seccionConsulta" class="mt-2">
+                <div class="portal-consulta-form">
+                    <label class="form-label fw-bold" for="criterioSocio">DNI o número de socio</label>
+                    <input type="text" inputmode="numeric" name="criterio" id="criterioSocio"
+                           class="form-control input-grande" placeholder="Por ejemplo: 12345678"
+                           value="{{ termino }}" autocomplete="off" aria-describedby="consultaInstructions" required>
+                    <button class="btn btn-primary btn-grande fw-bold w-100 mt-3" type="submit">
+                        Consultar cuotas
                     </button>
                 </div>
             </form>
@@ -264,6 +151,7 @@
 
         <!-- Resultados de la búsqueda -->
         {% if busqueda_realizada %}
+            <div aria-live="polite">
             {% if socio %}
 
                 <!-- ALERTA DE CUMPLEAÑOS DEL SOCIO BUSCADO -->
@@ -306,33 +194,9 @@
                             </div>
                         </div>
 
-                        <!-- Resumen del Último Pago -->
-                        <div class="alert alert-light border rounded-3 p-3 mb-3">
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <span class="text-muted small d-block">Último Pago Asentado:</span>
-                                    {% if ultimo_pago %}
-                                        <strong class="fs-5 text-dark">{{ ultimo_pago.periodo or ('Año ' ~ ultimo_pago.anio) }}</strong>
-                                        <span class="text-secondary small ms-2">
-                                            (Abonado el {{ ultimo_pago.fecha_cobro.strftime('%d/%m/%Y') if ultimo_pago.fecha_cobro and ultimo_pago.fecha_cobro.strftime else ultimo_pago.fecha_cobro }})
-                                        </span>
-                                    {% else %}
-                                        <span class="text-warning fw-semibold">No registra pagos recientes en el sistema.</span>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-4 text-md-end mt-2 mt-md-0">
-                                    {% if ultimo_pago %}
-                                        <a href="{{ url_for('socios.imprimir_recibo',  cuota_id=ultimo_pago.id) }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold">
-                                            📄 Ver Recibo
-                                        </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Historial de Cuotas -->
                         {% if cuotas %}
-                            <h6 class="fw-bold text-secondary mb-2 mt-4">Últimos Recibos Disponibles</h6>
+                            <h4 class="fw-bold text-dark mb-3">Tus últimos pagos registrados</h4>
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
@@ -341,7 +205,6 @@
                                             <th>Período</th>
                                             <th>Comprobante</th>
                                             <th class="text-end">Monto</th>
-                                            <th class="text-center">Descargar</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -351,28 +214,61 @@
                                             <td data-label="Período"><span class="badge bg-light text-dark border">{{ c.periodo or ('Año ' ~ c.anio) }}</span></td>
                                             <td data-label="Comprobante" class="text-muted small">{{ c.comprobante or '-' }}</td>
                                             <td data-label="Monto" class="text-end fw-bold text-success">${{ "{:,.2f}".format(c.monto or 0) }}</td>
-                                            <td data-label="Descargar" class="text-center">
-                                                <a href="{{ url_for('socios.imprimir_recibo',  cuota_id=c.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-0 px-2">
-                                                    📥 PDF
-                                                </a>
-                                            </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
+                        {% else %}
+                            <p class="alert alert-info mb-0" role="status">
+                                No hay pagos registrados para mostrar. Si tenés dudas, consultá en secretaría.
+                            </p>
                         {% endif %}
                     </div>
                 </div>
 
             {% else %}
                 <div class="alert alert-warning text-center rounded-4 p-4 shadow-sm">
-                    <h5 class="fw-bold">No se encontró el afiliado</h5>
-                    <p class="mb-0">No se encontraron registros con el documento <strong>"{{ termino }}"</strong>.</p>
+                    <h5 class="fw-bold">No encontramos ese socio</h5>
+                    <p class="mb-0">Revisá que el DNI o número de socio esté bien escrito y probá nuevamente.</p>
                 </div>
             {% endif %}
+            </div>
         {% endif %}
-    </div>
+    </section>
+
+        <section class="portal-section mb-4" aria-labelledby="informacionUtilTitle">
+            <div class="portal-section-heading mb-3">
+                <div>
+                    <p class="portal-eyebrow">Te esperamos</p>
+                    <h3 id="informacionUtilTitle">Información útil</h3>
+                </div>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card card-amigable h-100">
+                        <div class="card-body d-flex align-items-start gap-3">
+                            <i class="fas fa-clock portal-section-icon portal-section-icon-warm" aria-hidden="true"></i>
+                            <div>
+                                <h4 class="h6 fw-bold">Horario de atención</h4>
+                                <p class="text-muted mb-0">Lunes a Viernes en la sede social para cobro de cuotas y trámites.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card card-amigable h-100">
+                        <div class="card-body d-flex align-items-start gap-3">
+                            <i class="fas fa-location-dot portal-section-icon" aria-hidden="true"></i>
+                            <div>
+                                <h4 class="h6 fw-bold">Sede social</h4>
+                                <p class="text-muted mb-0">{{ INSTITUCION.direccion or 'Consultá en secretaría' }} — {{ INSTITUCION.ciudad_provincia or '' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
     <!-- SECCIÓN: CUMPLEAÑOS DEL MES -->
     <div class="portal-section mt-5">

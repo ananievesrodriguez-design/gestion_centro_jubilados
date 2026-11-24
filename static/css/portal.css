@@ -180,62 +180,6 @@
     font-size: 1.45rem;
 }
 
-.portal-topbar {
-    position: sticky;
-    top: 0;
-    z-index: 1020;
-}
-
-.portal-topbar .navbar {
-    background: linear-gradient(110deg, #123d67 0%, #145b83 58%, #167a85 100%);
-    min-height: 68px;
-    padding: 0.55rem 0;
-    box-shadow: 0 4px 18px rgba(17, 47, 74, 0.18);
-}
-
-.portal-topbar .navbar-brand {
-    margin-right: 1.5rem;
-    color: #fff;
-}
-
-.portal-topbar .navbar-brand:hover,
-.portal-topbar .navbar-brand:focus {
-    color: #fff;
-}
-
-.portal-topbar .navbar-logo,
-.portal-topbar .navbar-logo-placeholder {
-    width: 40px;
-    height: 40px;
-    flex-basis: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.32);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.96);
-    color: #145b83;
-}
-
-.portal-topbar .navbar-logo-placeholder {
-    font-size: 1.25rem;
-}
-
-.portal-topbar .nav-link {
-    display: flex;
-    min-height: 44px;
-    align-items: center;
-    padding: 0.65rem 0.8rem !important;
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.88) !important;
-    font-size: 0.94rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.portal-topbar .nav-link:hover,
-.portal-topbar .nav-link:focus-visible {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff !important;
-}
-
 .portal-page .card-amigable {
     overflow: hidden;
     border: 1px solid #e4ebef !important;
@@ -587,11 +531,6 @@
         width: 40px;
         height: 40px;
         flex-basis: 40px;
-    }
-
-    .portal-topbar .nav-link {
-        min-height: 42px;
-        font-size: 0.9rem;
     }
 
     .portal-page {

@@ -9,15 +9,18 @@
 {% block content %}
 <div class="portal-page">
     <header class="portal-topbar">
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4 no-print" aria-label="Secciones del portal">
+        <nav class="navbar navbar-expand-xl navbar-dark navbar-gestion no-print mb-4" aria-label="Secciones del portal">
             <div class="container-fluid px-4">
-                <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white text-decoration-none" href="{{ url_for('socios.portal_socios') }}">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('socios.portal_socios') }}">
                     {% if INSTITUCION.logo_url %}
                         <img src="{{ INSTITUCION.logo_url }}" alt="Logo de {{ INSTITUCION.nombre or 'Centro de Jubilados' }}" class="navbar-logo">
                     {% else %}
                         <span class="navbar-logo-placeholder" aria-hidden="true"><i class="fas fa-landmark"></i></span>
                     {% endif %}
-                    <span>{{ INSTITUCION.nombre or 'Centro de Jubilados' }}</span>
+                    <span class="navbar-brand-copy">
+                        <strong>{{ INSTITUCION.nombre or 'Centro de Jubilados' }}</strong>
+                        <small>Portal del Socio</small>
+                    </span>
                 </a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenuPortal" aria-controls="navMenuPortal" aria-expanded="false" aria-label="Navegación">
@@ -25,7 +28,7 @@
                 </button>
 
                 <div class="collapse navbar-collapse" id="navMenuPortal">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
+                    <ul class="navbar-nav me-auto my-2 my-xl-0">
                         <li class="nav-item">
                             <a class="nav-link fw-bold text-white" href="#seccionCumpleHoy">
                                 <i class="fas fa-cake-candles me-2" aria-hidden="true"></i>

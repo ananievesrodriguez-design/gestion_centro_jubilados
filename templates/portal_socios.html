@@ -61,6 +61,12 @@
                         </li>
                     </ul>
                 </div>
+                <div class="ms-auto">
+                    <a class="portal-admin-button" href="{{ url_for('auth.login') }}">
+                        <i class="fas fa-lock" aria-hidden="true"></i>
+                        <span>Administración</span>
+                    </a>
+                </div>
             </div>
         </nav>
     </header>
@@ -85,10 +91,6 @@
                     {% endif %}
                 </div>
             </div>
-            <a class="portal-admin-button" href="{{ url_for('auth.login') }}">
-                <i class="fas fa-lock" aria-hidden="true"></i>
-                <span>Administración</span>
-            </a>
         </div>
     </header>
 

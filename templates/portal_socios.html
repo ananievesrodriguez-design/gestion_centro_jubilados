@@ -8,6 +8,60 @@
 
 {% block content %}
 <div class="portal-page">
+    <header class="portal-topbar">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4 no-print" aria-label="Secciones del portal">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white text-decoration-none" href="{{ url_for('socios.portal_socios') }}">
+                    {% if INSTITUCION.logo_url %}
+                        <img src="{{ INSTITUCION.logo_url }}" alt="Logo de {{ INSTITUCION.nombre or 'Centro de Jubilados' }}" class="navbar-logo">
+                    {% else %}
+                        <span class="navbar-logo-placeholder" aria-hidden="true"><i class="fas fa-landmark"></i></span>
+                    {% endif %}
+                    <span>{{ INSTITUCION.nombre or 'Centro de Jubilados' }}</span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenuPortal" aria-controls="navMenuPortal" aria-expanded="false" aria-label="Navegación">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navMenuPortal">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold text-white" href="#seccionCumpleHoy">
+                                <i class="fas fa-cake-candles me-2" aria-hidden="true"></i>
+                                <span>Cumpleaños</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold text-white" href="#seccionNovedades">
+                                <i class="fas fa-bullhorn me-2" aria-hidden="true"></i>
+                                <span>Novedades</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold text-white" href="#seccionConsulta">
+                                <i class="fas fa-receipt me-2" aria-hidden="true"></i>
+                                <span>Consulta de cuotas</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold text-white" href="#seccionDocumentos">
+                                <i class="fas fa-folder-open me-2" aria-hidden="true"></i>
+                                <span>Documentos</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold text-white" href="#seccionFotos">
+                                <i class="fas fa-images me-2" aria-hidden="true"></i>
+                                <span>Galería de fotos</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
     <header class="portal-hero">
         <div class="portal-container portal-hero-inner">
             <div class="portal-brand">
@@ -44,14 +98,6 @@
             </div>
             <div class="portal-welcome-mark" aria-hidden="true"><i class="fas fa-heart"></i></div>
         </section>
-
-        <nav class="portal-menu" aria-label="Secciones del portal">
-            <a href="#seccionCumpleHoy"><i class="fas fa-cake-candles" aria-hidden="true"></i><span>Cumpleaños</span></a>
-            <a href="#seccionNovedades"><i class="fas fa-bullhorn" aria-hidden="true"></i><span>Novedades</span></a>
-            <a href="#seccionConsulta"><i class="fas fa-receipt" aria-hidden="true"></i><span>Consulta de cuotas</span></a>
-            <a href="#seccionDocumentos"><i class="fas fa-folder-open" aria-hidden="true"></i><span>Documentos</span></a>
-            <a href="#seccionFotos"><i class="fas fa-images" aria-hidden="true"></i><span>Galería de fotos</span></a>
-        </nav>
 
         <!-- SECCIÓN: CUMPLEAÑOS DEL DÍA -->
         <div id="seccionCumpleHoy" class="portal-section mb-4">

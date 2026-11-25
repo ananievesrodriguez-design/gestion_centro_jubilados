@@ -14,15 +14,46 @@
             .card { border: none !important; box-shadow: none !important; }
             .container { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
         }
+
+        /* Responsivo: en pantallas chicas (< md) se ocultan columnas secundarias de las tablas */
+        @media (max-width: 767.98px) {
+            .tabla-caja th.ocultar-md,
+            .tabla-caja td.ocultar-md {
+                display: none !important;
+            }
+        }
+
+        /* Formulario rápido de caja: fecha con calendario integrado y alto consistente */
+        #quickFecha,
+        input[type="date"].form-control {
+            min-height: 2.5rem;
+            font-size: 1rem;
+        }
+        input[type="date"].form-control {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect x='1.5' y='2' width='13' height='11' rx='2' fill='%236c757d'/%3E%3Cpath d='M1.5 5.5h13' stroke='%23ffffff' stroke-width='1.5'/%3E%3Cpath d='M1.5 8.5h13' stroke='%23ffffff' stroke-width='1.5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.6rem center;
+            background-size: 1em 1em;
+            padding: 0.375rem 2.5rem 0.375rem 0.75rem;
+        }
+        input[type="date"].form-control::-webkit-calendar-picker-indicator {
+            opacity: 0;
+        }
+
+        /* Formulario rápido: botón de tipo de movimiento más compacto */
+        #formQuickMovimiento .btn-group .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8125rem;
+        }
     </style>
 </head>
 <body class="bg-light">
 {% include 'navbar.html' %}
 
-<div class="container py-2" style="max-width: 900px;">
+<div class="container py-2" style="max-width: min(900px, 100%);">
 
     <!-- Botones Superiores -->
-    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 no-print">
         <div class="btn-group">
             <a href="{{ url_for('socios.listar_caja') }}" class="btn btn-sm {% if not anio_param %}btn-primary{% else %}btn-outline-secondary{% endif %}">Todo el Histórico</a>
             {% for anio in [anio_actual, anio_actual - 1] %}
@@ -36,19 +67,61 @@
     <div class="d-flex justify-content-between align-items-center mb-2 no-print">
         <div class="btn-group" style="flex-wrap: wrap;">
             {% for nro in range(1, 13) %}
-                {% set nombre_mes = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][nro-1] %}
-                <a href="{{ url_for('socios.listar_caja',  anio=anio_param, mes=nro) }}" class="btn btn-sm {% if mes_param == nro|string %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ nombre_mes }}</a>
+            {% set nombre_mes = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][nro-1] %}
+            <a href="{{ url_for('socios.listar_caja',  anio=anio_param, mes=nro) }}" class="btn btn-sm {% if mes_param == nro|string %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ nombre_mes }}</a>
             {% endfor %}
         </div>
     </div>
     {% endif %}
 
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
         <a href="{{ url_for('socios.nuevo_movimiento_caja') }}" class="btn btn-outline-primary btn-sm">+ Cargar Movimiento</a>
         <a href="{{ url_for('socios.caja_exportar_excel',  anio=anio_param, mes=mes_param) }}" class="btn btn-outline-primary btn-sm fw-bold">
             📥 Descargar Excel
         </a>
         <button onclick="window.print()" class="btn btn-dark btn-sm">🖨️ Imprimir / PDF</button>
+    </div>
+
+    <!-- MÓDULO: Registro Rápido de Ingresos / Egresos -->
+    <div class="card card-amigable shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="mb-0 fw-bold text-primary">📒 Cargar Ingreso / Gasto</h4>
+                <small class="text-muted">Registro rápido de movimientos en caja</small>
+            </div>
+            <span class="badge bg-light text-dark border">Tesorería</span>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ url_for('socios.nuevo_movimiento_caja') }}" method="POST" id="formQuickMovimiento">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-2">
+                        <label class="form-label fw-bold small mb-2 d-block">Tipo</label>
+                        <div class="btn-group w-100" role="group" aria-label="Tipo de movimiento">
+                            <input class="btn btn-check" type="radio" name="tipo" id="quickTipoEgreso" value="Egreso" checked>
+                            <label class="btn btn-outline-danger" for="quickTipoEgreso">📉 Egreso</label>
+                            <input class="btn btn-check" type="radio" name="tipo" id="quickTipoIngreso" value="Ingreso">
+                            <label class="btn btn-outline-success" for="quickTipoIngreso">📈 Ingreso</label>
+                        </div>
+                        <input type="hidden" name="categoria" id="quickCategoria" value="Varios">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label fw-bold small mb-2 d-block" for="quickFecha">Fecha</label>
+                        <input type="date" class="form-control" id="quickFecha" name="fecha" value="{{ hoy }}">
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label class="form-label fw-bold small mb-2 d-block" for="quickMonto">Monto ($)</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control fw-bold" id="quickMonto" name="monto" placeholder="0.00" required>
+                    </div>
+                    <div class="col-12 col-md-5">
+                        <label class="form-label fw-bold small mb-2 d-block" for="quickConcepto">Concepto</label>
+                        <input type="text" class="form-control" id="quickConcepto" name="concepto" placeholder="Ej: Pago factura de luz" required>
+                    </div>
+                    <div class="col-12 col-md-auto">
+                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold">✔ Guardar Movimiento</button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Tarjeta Principal del Balance -->
@@ -79,108 +152,107 @@
 
             
             <!-- 1. INGRESOS -->
-
-            <!-- SECCIÓN 1: INGRESOS -->
-            <!-- SECCIÓN 1: INGRESOS -->
             <div class="mb-4">
                 <h5 class="fw-bold text-success border-bottom pb-2 mb-3">1. INGRESOS</h5>
-                <table class="table table-bordered align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 110px;">Fecha</th>
-                            <th>Concepto / Detalle</th>
-                            <th>Categoría</th>
-                            <th>Comprobante / Responsable</th>
-                            <th class="text-end" style="width: 160px;">Importe</th>
-                            <th class="text-center no-print" style="width: 90px;">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- LÍNEA CONSOLIDADA DE SOCIOS (Protegida) -->
-                        <tr class="table-success table-opacity-25 fw-bold">
-                            <td class="text-muted small">Acumulado</td>
-                            <td>
-                                Recaudación Masa Societaria (Cuotas Sociales e Inscripciones)
-                                <div class="text-muted fw-normal small">Total general de cobranzas a socios registrados</div>
-                            </td>
-                            <td><span class="badge bg-success">Aportes Socios</span></td>
-                            <td class="text-muted small">Cobradores y Sede</td>
-                            <td class="text-end fs-6 text-success">${{ "{:,.2f}".format(total_socios) }}</td>
-                            <td class="text-center text-muted no-print"><small>🔒 Fijo</small></td>
-                        </tr>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle w-100 tabla-caja">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-nowrap" style="width: 100px;">Fecha</th>
+                                <th>Concepto / Detalle</th>
+                                <th class="ocultar-md">Categoría</th>
+                                <th class="ocultar-md">Comprobante / Responsable</th>
+                                <th class="text-end" style="width: 150px;">Importe</th>
+                                <th class="text-center no-print" style="width: 90px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- LÍNEA CONSOLIDADA DE SOCIOS (Protegida) -->
+                            <tr class="table-success table-opacity-25 fw-bold">
+                                <td class="text-muted small">Acumulado</td>
+                                <td>
+                                    Recaudación Masa Societaria (Cuotas Sociales e Inscripciones)
+                                    <div class="text-muted fw-normal small">Total general de cobranzas a socios registrados</div>
+                                </td>
+                                <td class="ocultar-md"><span class="badge bg-success">Aportes Socios</span></td>
+                                <td class="text-muted small ocultar-md">Cobradores y Sede</td>
+                                <td class="text-end fs-6 text-success">${{ "{:,.2f}".format(total_socios) }}</td>
+                                <td class="text-center text-muted no-print"><small>🔒 Fijo</small></td>
+                            </tr>
 
-                        <!-- OTROS INGRESOS DETALLADOS -->
-                        {% for item in otros_ingresos_items %}
-                        <tr>
-                            <td class="text-nowrap">{{ item.fecha.strftime('%d/%m/%Y') if item.fecha else '-' }}</td>
-                            <td>{{ item.concepto }}</td>
-                            <td><span class="badge bg-light text-dark border">{{ item.categoria }}</span></td>
-                            <td class="small text-muted">{{ item.comprobante or '-' }} / {{ item.interviene or '-' }}</td>
-                            <td class="text-end text-success">${{ "{:,.2f}".format(item.total_concepto) }}</td>
-                            <td class="text-center no-print">
-                                <a href="{{ url_for('socios.editar_movimiento_caja',  id=item.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">✏️ Editar</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr class="table-light fw-bold">
-                            <td colspan="4" class="text-end">SUBTOTAL INGRESOS:</td>
-                            <td class="text-end text-success fs-6">${{ "{:,.2f}".format(total_ingresos) }}</td>
-                            <td class="no-print"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-    
-
-            <!-- 2. EGRESOS -->
-           <!-- SECCIÓN 2: EGRESOS -->
-            <div class="mb-4">
-                <h5 class="fw-bold text-danger border-bottom pb-2 mb-3">2. EGRESOS / GASTOS</h5>
-                <table class="table table-bordered align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 110px;">Fecha</th>
-                            <th>Concepto / Detalle</th>
-                            <th>Categoría</th>
-                            <th>Comprobante / Interviene</th>
-                            <th class="text-end" style="width: 160px;">Importe</th>
-                            <th class="text-center no-print" style="width: 90px;">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if egresos_items %}
-                            {% for item in egresos_items %}
+                            <!-- OTROS INGRESOS DETALLADOS -->
+                            {% for item in otros_ingresos_items %}
                             <tr>
                                 <td class="text-nowrap">{{ item.fecha.strftime('%d/%m/%Y') if item.fecha else '-' }}</td>
                                 <td>{{ item.concepto }}</td>
-                                <td><span class="badge bg-light text-dark border">{{ item.categoria }}</span></td>
-                                <td class="small text-muted">{{ item.comprobante or '-' }} / {{ item.interviene or '-' }}</td>
-                                <td class="text-end text-danger">-${{ "{:,.2f}".format(item.total_concepto) }}</td>
+                                <td class="ocultar-md"><span class="badge bg-light text-dark border">{{ item.categoria }}</span></td>
+                                <td class="small text-muted ocultar-md">{{ item.comprobante or '-' }} / {{ item.interviene or '-' }}</td>
+                                <td class="text-end text-success">${{ "{:,.2f}".format(item.total_concepto) }}</td>
                                 <td class="text-center no-print">
-                                    <a href="{{ url_for('socios.editar_movimiento_caja',  id=item.id) }}" class="btn btn-sm btn-outline-danger py-0 px-2">✏️ Editar</a>
+                                    <a href="{{ url_for('socios.editar_movimiento_caja',  id=item.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">✏️ Editar</a>
                                 </td>
                             </tr>
                             {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-3">No se registran egresos en el período seleccionado.</td>
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light fw-bold">
+                                <td colspan="2" class="text-end">SUBTOTAL INGRESOS:</td>
+                                <td class="text-end text-success fs-6">${{ "{:,.2f}".format(total_ingresos) }}</td>
+                                <td class="no-print"></td>
                             </tr>
-                        {% endif %}
-                    </tbody>
-                    <tfoot>
-                        <tr class="table-light fw-bold">
-                            <td colspan="4" class="text-end">SUBTOTAL EGRESOS:</td>
-                            <td class="text-end text-danger fs-6">-${{ "{:,.2f}".format(total_egresos) }}</td>
-                            <td class="no-print"></td>
-                        </tr>
-                    </tfoot>
-                </table>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. EGRESOS / GASTOS -->
+            <div class="mb-4">
+                <h5 class="fw-bold text-danger border-bottom pb-2 mb-3">2. EGRESOS / GASTOS</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle w-100 tabla-caja">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-nowrap" style="width: 100px;">Fecha</th>
+                                <th>Concepto / Detalle</th>
+                                <th class="ocultar-md">Categoría</th>
+                                <th class="ocultar-md">Comprobante / Interviene</th>
+                                <th class="text-end" style="width: 150px;">Importe</th>
+                                <th class="text-center no-print" style="width: 90px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if egresos_items %}
+                                {% for item in egresos_items %}
+                                <tr>
+                                    <td class="text-nowrap">{{ item.fecha.strftime('%d/%m/%Y') if item.fecha else '-' }}</td>
+                                    <td>{{ item.concepto }}</td>
+                                    <td class="ocultar-md"><span class="badge bg-light text-dark border">{{ item.categoria }}</span></td>
+                                    <td class="small text-muted ocultar-md">{{ item.comprobante or '-' }} / {{ item.interviene or '-' }}</td>
+                                    <td class="text-end text-danger">-${{ "{:,.2f}".format(item.total_concepto) }}</td>
+                                    <td class="text-center no-print">
+                                        <a href="{{ url_for('socios.editar_movimiento_caja',  id=item.id) }}" class="btn btn-sm btn-outline-danger py-0 px-2">✏️ Editar</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">No se registran egresos en el período seleccionado.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light fw-bold">
+                                <td colspan="2" class="text-end">SUBTOTAL EGRESOS:</td>
+                                <td class="text-end text-danger fs-6">-${{ "{:,.2f}".format(total_egresos) }}</td>
+                                <td class="no-print"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
 
             <!-- SUPERÁVIT / SALDO FINAL -->
-            <div class="p-3 bg-light rounded border d-flex justify-content-between align-items-center mb-4">
+            <div class="p-3 bg-light rounded border d-flex flex-wrap justify-content-between align-items-center mb-4">
                 <span class="fw-bold fs-5">SALDO DISPONIBLE EN CAJA:</span>
                 <span class="fw-bold fs-4 text-primary">${{ "{:,.2f}".format(saldo_actual) }}</span>
             </div>
@@ -209,5 +281,22 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const quickTipoEgreso = document.getElementById('quickTipoEgreso');
+    const quickTipoIngreso = document.getElementById('quickTipoIngreso');
+    const quickCategoria = document.getElementById('quickCategoria');
+    const categoriasPorTipo = {
+        'Egreso': 'Gastos Operativos',
+        'Ingreso': 'Donaciones / Ingresos',
+    };
+    function actualizarCategoriaQuick(tipo) {
+        if (quickCategoria) {
+            quickCategoria.value = categoriasPorTipo[tipo] || 'Varios';
+        }
+    }
+    actualizarCategoriaQuick('Egreso');
+    quickTipoEgreso.addEventListener('change', () => actualizarCategoriaQuick('Egreso'));
+    quickTipoIngreso.addEventListener('change', () => actualizarCategoriaQuick('Ingreso'));
+</script>
 </body>
 </html>

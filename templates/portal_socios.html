@@ -71,28 +71,7 @@
         </nav>
     </header>
 
-    <header class="portal-hero">
-        <div class="portal-container portal-hero-inner">
-            <div class="portal-brand">
-                {% if INSTITUCION.logo_url %}
-                    <img src="{{ INSTITUCION.logo_url }}"
-                         alt="Logo de {{ INSTITUCION.nombre or 'Centro de Jubilados' }}" class="portal-logo">
-                {% else %}
-                    <span class="portal-logo-placeholder" aria-hidden="true"><i class="fas fa-handshake"></i></span>
-                {% endif %}
-                <div>
-                    <p class="portal-eyebrow">Portal de atención a la comunidad</p>
-                    <h1>{{ INSTITUCION.nombre or 'Centro de Jubilados y Pensionados' }}</h1>
-                    {% if INSTITUCION.direccion or INSTITUCION.ciudad_provincia %}
-                        <p class="portal-location">
-                            <i class="fas fa-location-dot" aria-hidden="true"></i>
-                            {{ INSTITUCION.direccion or '' }}{% if INSTITUCION.direccion and INSTITUCION.ciudad_provincia %} · {% endif %}{{ INSTITUCION.ciudad_provincia or '' }}
-                        </p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </header>
+   
 
     <div class="portal-container portal-content">
         <section class="portal-welcome" aria-labelledby="portalWelcomeTitle">

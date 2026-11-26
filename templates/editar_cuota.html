@@ -3,7 +3,7 @@
 {% block title %}Editar Cuota #{{ cuota.id }} - {{ cuota.apellido }}, {{ cuota.nombre }}{% endblock %}
 
 {% block content %}
-    <div class="container py-4" style="max-width: 760px;">
+    <div class="container py-4" style="max-width: min(760px, 100%);">
         <div class="card card-amigable shadow-sm border-0">
             <div class="card-header bg-warning text-dark py-3 d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">✏️ Editar Cuota #{{ cuota.id }}</h4>

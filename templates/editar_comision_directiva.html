@@ -3,7 +3,7 @@
 {% block title %}Editar Comisión Directiva - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
 
 {% block content %}
-<div class="py-4" style="max-width: 760px;">
+<div class="py-4" style="max-width: min(760px, 100%);">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-bold text-primary mb-0">Editar integrante</h4>
         <a class="btn btn-outline-secondary" href="{{ url_for('admin.comision_directiva') }}">Volver</a>

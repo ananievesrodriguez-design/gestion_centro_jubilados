@@ -3,7 +3,7 @@
 {% block title %}{{ titulo }} - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
 
 {% block content %}
-<div class="container py-5" style="max-width: 720px;">
+<div class="container py-5" style="max-width: min(720px, 100%);">
     <div class="card shadow-sm border-0">
         <div class="card-body text-center p-5">
             <h1 class="h3 text-danger mb-3">{{ titulo }}</h1>

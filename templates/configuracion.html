@@ -3,7 +3,7 @@
 {% block title %}Configuración Institucional - {{ INSTITUCION.nombre or 'Centro de Jubilados' }}{% endblock %}
 
 {% block content %}
-    <div class="container py-4" style="max-width: 980px;">
+    <div class="container py-4" style="max-width: min(980px, 100%);">
 
         <form method="POST" enctype="multipart/form-data">
             <!-- 1. DATOS OFICIALES -->

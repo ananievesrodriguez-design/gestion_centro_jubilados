@@ -13,7 +13,7 @@
         }
         .hoja-impresion {
             background: #fff;
-            max-width: 980px;
+            max-width: min(980px, 100%);
             margin: 20px auto;
             padding: 35px 40px;
             border: 1px solid #dee2e6;
@@ -80,7 +80,7 @@
 <body>
 
 <!-- Barra de control en pantalla -->
-<div class="container py-3 no-print" style="max-width: 980px;">
+<div class="container py-3 no-print" style="max-width: min(980px, 100%);">
     <div class="d-flex justify-content-between align-items-center">
         <a href="{{ url_for('socios.listar_socios') }}" class="btn btn-outline-secondary btn-sm">
             ← Volver al Padrón

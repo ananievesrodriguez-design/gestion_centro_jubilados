@@ -752,7 +752,7 @@ body {
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
     .hero-banner {
         padding: 40px 15px 25px 15px;
     }
@@ -767,6 +767,17 @@ body {
     .icono-grande {
         font-size: 1.8rem;
     }
+
+    /* En pantallas chicas (< md), las columnas de Bootstrap (col-md-*, col-sm-*) se apilan */
+    .row > [class*="col-"] {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+}
+
+/* Imágenes nunca deben desbordar su contenedor */
+img {
+    max-width: 100%;
 }
 
 /* ===== IMPRIMIR ===== */

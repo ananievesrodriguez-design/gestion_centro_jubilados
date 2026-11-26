@@ -1512,7 +1512,7 @@ def descargar_matriz_cuotas_pdf():
 @socios_bp.route("/cobrador")
 @login_required
 def inicio_cobrador():
-    if session.get("user", {}).get("role") != "cobrador":
+    if session.get("user", {}).get("role") not in {"cobrador", "superadmin", "admin"}:
         return redirect(url_for("socios.listar_socios"))
 
     busqueda = request.args.get("q", "").strip()
@@ -1538,7 +1538,7 @@ def inicio_cobrador():
 @socios_bp.route("/cobrador/movimiento", methods=["GET", "POST"])
 @login_required
 def movimiento_cobrador():
-    if session.get("user", {}).get("role") != "cobrador":
+    if session.get("user", {}).get("role") not in {"cobrador", "superadmin", "admin"}:
         return redirect(url_for("socios.listar_socios"))
 
     if request.method == "POST":
@@ -1606,7 +1606,7 @@ def movimiento_cobrador():
 @socios_bp.route("/registrar-cuota/<int:socio_id>", methods=["GET", "POST"])
 @login_required
 def registrar_cuota(socio_id):
-    es_cobrador = session.get("user", {}).get("role") == "cobrador"
+    es_cobrador = session.get("user", {}).get("role") in {"cobrador", "superadmin", "admin"}
     consulta_socio = """
         SELECT id, nro_socio, apellido, nombre, dni
         FROM socios
@@ -1818,8 +1818,13 @@ def registrar_cuota(socio_id):
     periodo_inicial = request.args.get(
         "periodo", f"{NOMBRES_MESES[int(mes_inicio[5:7]) - 1]} {mes_inicio[:4]}"
     )
+    rapido = (
+        request.args.get("rapido") == "1"
+        or request.args.get("rapido") == "true"
+        or request.form.get("rapido") == "1"
+    )
     return render_template(
-        "registrar_cuota.html",
+        "cobro_rapido.html" if rapido else "registrar_cuota.html",
         socios=[socio],
         cobradores=cobradores,
         socio_id=socio_id,
@@ -1836,6 +1841,7 @@ def registrar_cuota(socio_id):
         anio_matriz=request.args.get("anio", mes_inicio[:4]),
         es_cobrador=es_cobrador,
         valores_cuota=obtener_valores_cuota(),
+        rapido=rapido,
     )
 
 
@@ -1854,10 +1860,10 @@ def imprimir_recibo(cuota_id):
     """), {"id": cuota_id}).mappings().first()
     if not cuota:
         flash("Recibo no encontrado.", "warning")
-        destino = "socios.inicio_cobrador" if session.get("user", {}).get("role") == "cobrador" else "socios.matriz_cuotas"
+        destino = "socios.inicio_cobrador" if session.get("user", {}).get("role") in {"cobrador", "superadmin", "admin"} else "socios.matriz_cuotas"
         return redirect(url_for(destino))
     if (
-        session.get("user", {}).get("role") == "cobrador"
+        session.get("user", {}).get("role") in {"cobrador", "superadmin", "admin"}
         and cuota["cobrador_id"] != session.get("cobrador_id")
     ):
         abort(403)
@@ -2069,6 +2075,7 @@ def listar_caja():
     return render_template(
         "listar_caja.html",
         etiqueta_periodo=etiqueta_periodo,
+        hoy=date.today().isoformat(),
         anio_param=anio_param,
         anio_actual=date.today().year,
         mes_param=mes_param,

@@ -1825,6 +1825,7 @@ def registrar_cuota(socio_id):
     )
     return render_template(
         "cobro_rapido.html" if rapido else "registrar_cuota.html",
+        socio=socio,
         socios=[socio],
         cobradores=cobradores,
         socio_id=socio_id,
